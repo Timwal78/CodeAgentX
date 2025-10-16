@@ -260,7 +260,16 @@ FINANCIAL_DATASETS_API_KEY=your-financial-datasets-api-key
     # Display results
     if st.session_state.results:
         st.markdown("---")
-        st.header("📊 Research Results")
+        
+        col_header1, col_header2 = st.columns([3, 1])
+        with col_header1:
+            st.header("📊 Research Results")
+        with col_header2:
+            if st.button("💬 Ask Follow-up", type="secondary"):
+                previous_query = st.session_state.results.get('query', '')
+                previous_answer = st.session_state.results.get('answer', '')[:500]
+                st.session_state.query_text = f"Follow-up to: '{previous_query}'\n\nPrevious findings: {previous_answer}...\n\nMy follow-up question: "
+                st.rerun()
         
         # Main answer
         if 'answer' in st.session_state.results:
