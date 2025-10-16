@@ -118,9 +118,16 @@ class StockScreener:
                 if price_change_5d > 0:
                     squeeze_score += 10
                 
+                # Calculate trading levels
+                trading_levels = self._calculate_trading_levels(hist, current_price)
+                
                 results.append({
                     "symbol": symbol,
                     "price": round(current_price, 2),
+                    "buy_at": trading_levels["buy_price"],
+                    "sell_at": trading_levels["sell_target"],
+                    "stop_loss": trading_levels["stop_loss"],
+                    "risk_reward": trading_levels["risk_reward"],
                     "volume_ratio": round(volume_ratio, 2),
                     "price_change_1d": round(price_change_1d, 2),
                     "price_change_5d": round(price_change_5d, 2),
@@ -444,9 +451,16 @@ class StockScreener:
                     squeeze_score += 10
                 
                 if squeeze_score > 30:
+                    # Calculate trading levels
+                    trading_levels = self._calculate_trading_levels(hist, current_price)
+                    
                     results.append({
                         "symbol": symbol,
                         "price": round(current_price, 2),
+                        "buy_at": trading_levels["buy_price"],
+                        "sell_at": trading_levels["sell_target"],
+                        "stop_loss": trading_levels["stop_loss"],
+                        "risk_reward": trading_levels["risk_reward"],
                         "squeeze_active": bb_inside_kc,
                         "squeeze_firing": squeeze_firing,
                         "bb_width": round(bb_width, 2),
@@ -684,9 +698,16 @@ class StockScreener:
                 
                 # Only include high potential candidates
                 if moass_score >= 40:
+                    # Calculate trading levels
+                    trading_levels = self._calculate_trading_levels(hist, current_price)
+                    
                     results.append({
                         "symbol": symbol,
                         "price": round(current_price, 2),
+                        "buy_at": trading_levels["buy_price"],
+                        "sell_at": trading_levels["sell_target"],
+                        "stop_loss": trading_levels["stop_loss"],
+                        "risk_reward": trading_levels["risk_reward"],
                         "volume_surge": round(volume_surge, 2),
                         "price_change_5d": round(price_change_5d, 2),
                         "price_change_20d": round(price_change_20d, 2),
@@ -931,3 +952,67 @@ class StockScreener:
         # Squeeze when BB inside KC
         return (bb_upper.iloc[-1] < kc_upper.iloc[-1] and 
                 bb_lower.iloc[-1] > kc_lower.iloc[-1])
+    
+    def _calculate_trading_levels(self, hist: pd.DataFrame, current_price: float, 
+                                   risk_reward_ratio: float = 2.5) -> Dict[str, float]:
+        """
+        Calculate buy, sell, and stop loss levels for a stock.
+        
+        Args:
+            hist: Price history DataFrame
+            current_price: Current stock price
+            risk_reward_ratio: Target risk/reward ratio (default 2.5:1)
+        
+        Returns:
+            Dictionary with buy_price, sell_target, stop_loss
+        """
+        if len(hist) < 20:
+            return {
+                "buy_price": round(current_price, 2),
+                "sell_target": round(current_price * 1.25, 2),
+                "stop_loss": round(current_price * 0.92, 2)
+            }
+        
+        # Support level (recent swing low)
+        support = hist['Low'].tail(20).min()
+        
+        # Resistance level (recent swing high)
+        resistance = hist['High'].tail(20).max()
+        
+        # ATR for volatility-based stops
+        tr1 = hist['High'] - hist['Low']
+        tr2 = abs(hist['High'] - hist['Close'].shift())
+        tr3 = abs(hist['Low'] - hist['Close'].shift())
+        tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+        atr = tr.rolling(14).mean().iloc[-1]
+        
+        # Buy price: current price or slight pullback to support
+        if current_price - support < atr:
+            buy_price = current_price  # Already near support
+        else:
+            buy_price = current_price * 0.98  # 2% pullback entry
+        
+        # Stop loss: Below support or 1.5x ATR below buy price
+        atr_stop = buy_price - (1.5 * atr)
+        support_stop = support * 0.98  # Just below support
+        stop_loss = max(atr_stop, support_stop)  # Use wider stop
+        
+        # Sell target: Based on risk/reward ratio
+        risk = buy_price - stop_loss
+        sell_target = buy_price + (risk * risk_reward_ratio)
+        
+        # Adjust sell target to resistance if closer
+        if sell_target > resistance and resistance > current_price:
+            sell_target = resistance * 0.98  # Just before resistance
+        
+        # Ensure minimum gain potential (25%)
+        min_target = buy_price * 1.25
+        if sell_target < min_target:
+            sell_target = min_target
+        
+        return {
+            "buy_price": round(buy_price, 2),
+            "sell_target": round(sell_target, 2),
+            "stop_loss": round(stop_loss, 2),
+            "risk_reward": round((sell_target - buy_price) / (buy_price - stop_loss), 1)
+        }

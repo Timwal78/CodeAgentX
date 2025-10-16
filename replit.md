@@ -21,6 +21,7 @@ Dexter is a Streamlit-based financial research agent that uses a multi-agent arc
 - **Options Visualization** - Volume/OI bar charts and implied volatility skew plots
 - **Advanced Stock Screening** - TTM Squeeze, MOASS scanner, penny stock finder, bullish/bearish pattern detection
 - **Scheduled MOASS Hunting** - Automated scans at 7 AM & 3:05 PM EST (eagle eyes), plus 2-hour intervals with Discord alerts
+- **Trading Recommendations** - Automatic buy/sell/stop loss price levels with risk:reward ratios for all scan results
 
 ## Architecture
 
@@ -72,6 +73,14 @@ Dexter is a Streamlit-based financial research agent that uses a multi-agent arc
 - **Discord Alerts** - Automatic notifications when notable setups detected
 - **Manual Scans** - Run immediate eagle eyes or regular scans on demand
 - **Scan History** - View recent scan results and findings
+
+### Trading Recommendations (NEW!)
+- **Automatic Price Levels** - Buy @ price, Sell @ target, Stop Loss calculated for every scan result
+- **Risk/Reward Ratios** - 2.5:1 minimum R:R on all recommendations
+- **Support & Resistance** - Entry points based on recent swing lows and support levels
+- **ATR-Based Stops** - Volatility-adjusted stop loss using Average True Range
+- **Target Calculation** - Sell targets based on resistance levels and risk/reward optimization
+- **Mobile-Ready Alerts** - All price levels included in Discord notifications and scan history
 
 ### Data Visualization
 - Automatic chart generation from financial data

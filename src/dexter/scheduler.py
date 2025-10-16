@@ -205,7 +205,7 @@ class MOASSScheduler:
             print(f"  ❌ Regular scan error: {str(e)}")
             return None
     
-    def manual_scan(self, scan_type: str = "eagle_eyes") -> Dict[str, Any]:
+    def manual_scan(self, scan_type: str = "eagle_eyes") -> Optional[Dict[str, Any]]:
         """Run a manual scan immediately."""
         if scan_type == "eagle_eyes":
             return self.eagle_eyes_scan()
@@ -236,6 +236,9 @@ class MOASSScheduler:
     
     def _send_eagle_eyes_alert(self, results: Dict[str, Any]):
         """Send comprehensive eagle eyes alert to Discord."""
+        if not self.discord_webhook_url:
+            return
+            
         findings = results.get("findings", {})
         timestamp = results.get("timestamp", "")
         
@@ -246,8 +249,9 @@ class MOASSScheduler:
         if findings.get("moass"):
             message += "🚀 **MOASS CANDIDATES:**\n"
             for stock in findings["moass"][:3]:
-                message += f"  • **{stock['symbol']}** - Score: {stock['moass_score']}/100\n"
-                message += f"    Volume: {stock['volume_surge']}x | Price Δ: {stock['price_change_5d']}% | Gamma: {'✅' if stock['gamma_potential'] else '❌'}\n"
+                message += f"  • **{stock['symbol']}** @ ${stock['price']} - Score: {stock['moass_score']}/100\n"
+                message += f"    📈 BUY @ ${stock.get('buy_at', stock['price'])} | 🎯 SELL @ ${stock.get('sell_at', 'N/A')} | 🛑 STOP @ ${stock.get('stop_loss', 'N/A')}\n"
+                message += f"    Volume: {stock['volume_surge']}x | R:R {stock.get('risk_reward', 'N/A')}:1 | Gamma: {'✅' if stock['gamma_potential'] else '❌'}\n"
             message += "\n"
         
         # TTM Squeeze
@@ -255,8 +259,9 @@ class MOASSScheduler:
             message += "💥 **TTM SQUEEZE SETUPS:**\n"
             for stock in findings["squeeze"][:3]:
                 status = "🔥 FIRING" if stock['squeeze_firing'] else "⏳ ACTIVE"
-                message += f"  • **{stock['symbol']}** - {status}\n"
-                message += f"    BB Width: {stock['bb_width']}% | Momentum: {stock['momentum']}\n"
+                message += f"  • **{stock['symbol']}** @ ${stock['price']} - {status}\n"
+                message += f"    📈 BUY @ ${stock.get('buy_at', stock['price'])} | 🎯 SELL @ ${stock.get('sell_at', 'N/A')} | 🛑 STOP @ ${stock.get('stop_loss', 'N/A')}\n"
+                message += f"    BB Width: {stock['bb_width']}% | Momentum: {stock['momentum']} | R:R {stock.get('risk_reward', 'N/A')}:1\n"
             message += "\n"
         
         # Bullish Patterns
@@ -279,7 +284,8 @@ class MOASSScheduler:
         if findings.get("penny_stocks"):
             message += "💰 **TOP PENNY STOCKS:**\n"
             for stock in findings["penny_stocks"][:3]:
-                message += f"  • **{stock['symbol']}** - ${stock['price']} | Score: {stock['squeeze_score']}\n"
+                message += f"  • **{stock['symbol']}** @ ${stock['price']} | Score: {stock['squeeze_score']}\n"
+                message += f"    📈 BUY @ ${stock.get('buy_at', stock['price'])} | 🎯 SELL @ ${stock.get('sell_at', 'N/A')} | 🛑 STOP @ ${stock.get('stop_loss', 'N/A')}\n"
             message += "\n"
         
         message += f"_Scan completed at {datetime.fromisoformat(timestamp).strftime('%I:%M %p EST')}_"
@@ -294,6 +300,9 @@ class MOASSScheduler:
     
     def _send_regular_alert(self, results: Dict[str, Any]):
         """Send regular scan alert to Discord."""
+        if not self.discord_webhook_url:
+            return
+            
         findings = results.get("findings", {})
         timestamp = results.get("timestamp", "")
         
@@ -304,13 +313,15 @@ class MOASSScheduler:
             message += "🚀 **MOASS Alerts:**\n"
             for stock in findings["moass"]:
                 if stock.get("moass_score", 0) > 60:
-                    message += f"  • **{stock['symbol']}** - Score: {stock['moass_score']}/100\n"
+                    message += f"  • **{stock['symbol']}** @ ${stock['price']} - Score: {stock['moass_score']}/100\n"
+                    message += f"    📈 BUY @ ${stock.get('buy_at')} | 🎯 SELL @ ${stock.get('sell_at')} | 🛑 STOP @ ${stock.get('stop_loss')}\n"
         
         if findings.get("squeeze"):
             message += "💥 **Squeeze Alerts:**\n"
             for stock in findings["squeeze"]:
                 if stock.get("squeeze_firing") and stock.get("momentum", 0) > 0:
-                    message += f"  • **{stock['symbol']}** - FIRING with momentum {stock['momentum']}\n"
+                    message += f"  • **{stock['symbol']}** @ ${stock['price']} - FIRING with momentum {stock['momentum']}\n"
+                    message += f"    📈 BUY @ ${stock.get('buy_at')} | 🎯 SELL @ ${stock.get('sell_at')} | 🛑 STOP @ ${stock.get('stop_loss')}\n"
         
         message += f"\n_Scan at {datetime.fromisoformat(timestamp).strftime('%I:%M %p EST')}_"
         

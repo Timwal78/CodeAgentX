@@ -204,11 +204,38 @@ def main():
             history = st.session_state.scheduler.get_scan_history(limit=5)
             if history:
                 with st.expander("📊 Recent Scans"):
-                    for scan in reversed(history):
+                    for i, scan in enumerate(reversed(history)):
                         scan_time = datetime.fromisoformat(scan['timestamp']).strftime('%I:%M %p')
                         scan_type = "🦅 Eagle Eyes" if scan['scan_type'] == 'eagle_eyes' else "📊 Regular"
                         findings_count = sum(len(v) for v in scan.get('findings', {}).values())
-                        st.text(f"{scan_type} - {scan_time} - {findings_count} findings")
+                        
+                        with st.expander(f"{scan_type} - {scan_time} - {findings_count} findings"):
+                            findings = scan.get('findings', {})
+                            
+                            # MOASS Candidates
+                            if findings.get('moass'):
+                                st.markdown("**🚀 MOASS Candidates:**")
+                                for stock in findings['moass'][:3]:
+                                    st.markdown(f"**{stock['symbol']}** @ ${stock['price']} - Score: {stock['moass_score']}/100")
+                                    if 'buy_at' in stock:
+                                        st.markdown(f"  📈 BUY @ ${stock['buy_at']} | 🎯 SELL @ ${stock['sell_at']} | 🛑 STOP @ ${stock['stop_loss']} | R:R {stock.get('risk_reward', 'N/A')}:1")
+                            
+                            # TTM Squeeze
+                            if findings.get('squeeze'):
+                                st.markdown("**💥 TTM Squeeze:**")
+                                for stock in findings['squeeze'][:3]:
+                                    status = "🔥 FIRING" if stock['squeeze_firing'] else "⏳ ACTIVE"
+                                    st.markdown(f"**{stock['symbol']}** @ ${stock['price']} - {status}")
+                                    if 'buy_at' in stock:
+                                        st.markdown(f"  📈 BUY @ ${stock['buy_at']} | 🎯 SELL @ ${stock['sell_at']} | 🛑 STOP @ ${stock['stop_loss']}")
+                            
+                            # Penny Stocks
+                            if findings.get('penny_stocks'):
+                                st.markdown("**💰 Penny Stocks:**")
+                                for stock in findings['penny_stocks'][:3]:
+                                    st.markdown(f"**{stock['symbol']}** @ ${stock['price']} - Score: {stock['squeeze_score']}")
+                                    if 'buy_at' in stock:
+                                        st.markdown(f"  📈 BUY @ ${stock['buy_at']} | 🎯 SELL @ ${stock['sell_at']} | 🛑 STOP @ ${stock['stop_loss']}")
         
         st.markdown("---")
         
