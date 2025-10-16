@@ -2,6 +2,7 @@ import streamlit as st
 import os
 from dotenv import load_dotenv
 from src.dexter.agent import Agent
+from src.dexter.utils.discord import DiscordWebhook
 import traceback
 
 # Load environment variables
@@ -147,10 +148,35 @@ FINANCIAL_DATASETS_API_KEY=your-financial-datasets-api-key
                     status_placeholder.success("✅ Research completed!")
                     progress_placeholder.progress(1.0)
                     
+                    # Send to Discord if webhook is configured
+                    if st.session_state.get('discord_webhook'):
+                        try:
+                            discord = DiscordWebhook(st.session_state.discord_webhook)
+                            webhook_success = discord.send_research_results(
+                                query=query,
+                                answer=results.get('answer', ''),
+                                stats=results.get('stats', {}),
+                                tasks=results.get('tasks_completed', [])
+                            )
+                            if webhook_success:
+                                st.success("📤 Results sent to Discord!")
+                            else:
+                                st.warning("⚠️ Failed to send to Discord webhook")
+                        except Exception as discord_error:
+                            st.warning(f"⚠️ Discord webhook error: {str(discord_error)}")
+                    
                 except Exception as e:
                     status_placeholder.error(f"❌ Error during research: {str(e)}")
                     st.error("Full error details:")
                     st.code(traceback.format_exc())
+                    
+                    # Send error to Discord if webhook is configured
+                    if st.session_state.get('discord_webhook'):
+                        try:
+                            discord = DiscordWebhook(st.session_state.discord_webhook)
+                            discord.send_error_notification(query, str(e))
+                        except Exception:
+                            pass
     
     with col2:
         if st.button("🗑️ Clear Results"):
