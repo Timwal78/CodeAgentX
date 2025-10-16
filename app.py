@@ -47,6 +47,16 @@ def main():
         if discord_webhook_url:
             st.session_state.discord_webhook = discord_webhook_url
             st.success("✅ Discord webhook configured")
+            
+            if st.button("🧪 Test Webhook"):
+                try:
+                    test_discord = DiscordWebhook(discord_webhook_url)
+                    if test_discord.test_webhook():
+                        st.success("✅ Test message sent successfully!")
+                    else:
+                        st.error("❌ Failed to send test message. Check your webhook URL.")
+                except Exception as e:
+                    st.error(f"❌ Webhook test failed: {str(e)}")
         else:
             st.session_state.discord_webhook = None
         
@@ -149,9 +159,10 @@ FINANCIAL_DATASETS_API_KEY=your-financial-datasets-api-key
                     progress_placeholder.progress(1.0)
                     
                     # Send to Discord if webhook is configured
-                    if st.session_state.get('discord_webhook'):
+                    discord_webhook_url = st.session_state.get('discord_webhook')
+                    if discord_webhook_url:
                         try:
-                            discord = DiscordWebhook(st.session_state.discord_webhook)
+                            discord = DiscordWebhook(discord_webhook_url)
                             webhook_success = discord.send_research_results(
                                 query=query,
                                 answer=results.get('answer', ''),
@@ -171,9 +182,10 @@ FINANCIAL_DATASETS_API_KEY=your-financial-datasets-api-key
                     st.code(traceback.format_exc())
                     
                     # Send error to Discord if webhook is configured
-                    if st.session_state.get('discord_webhook'):
+                    discord_webhook_url = st.session_state.get('discord_webhook')
+                    if discord_webhook_url:
                         try:
-                            discord = DiscordWebhook(st.session_state.discord_webhook)
+                            discord = DiscordWebhook(discord_webhook_url)
                             discord.send_error_notification(query, str(e))
                         except Exception:
                             pass

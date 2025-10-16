@@ -12,7 +12,7 @@ class DiscordWebhook:
     def __init__(self, webhook_url: str):
         self.webhook_url = webhook_url
     
-    def send_research_results(self, query: str, answer: str, stats: Dict[str, Any], tasks: List[Dict] = None) -> bool:
+    def send_research_results(self, query: str, answer: str, stats: Dict[str, Any], tasks: Optional[List[Dict]] = None) -> bool:
         """
         Send research results to Discord as a rich embed.
         
@@ -38,13 +38,17 @@ class DiscordWebhook:
                 timeout=10
             )
             
-            return response.status_code == 204
+            if response.status_code != 204:
+                print(f"Discord webhook failed (status {response.status_code}): {response.text}")
+                return False
+            
+            return True
             
         except Exception as e:
             print(f"Discord webhook error: {str(e)}")
             return False
     
-    def _create_research_embed(self, query: str, answer: str, stats: Dict[str, Any], tasks: List[Dict] = None) -> Dict:
+    def _create_research_embed(self, query: str, answer: str, stats: Dict[str, Any], tasks: Optional[List[Dict]] = None) -> Dict:
         """
         Create a Discord embed with research results.
         """
@@ -56,7 +60,7 @@ class DiscordWebhook:
             "title": "🤖 Financial Research Complete",
             "description": f"**Query:** {query}\n\n**Summary:**\n{truncated_answer}",
             "color": 3447003,  # Blue color
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.utcnow().isoformat() + "Z",
             "footer": {
                 "text": "Dexter Financial Research Agent"
             },
@@ -117,7 +121,7 @@ class DiscordWebhook:
                         "title": title,
                         "description": message,
                         "color": 3447003,
-                        "timestamp": datetime.utcnow().isoformat()
+                        "timestamp": datetime.utcnow().isoformat() + "Z"
                     }]
                 }
             else:
@@ -132,7 +136,11 @@ class DiscordWebhook:
                 timeout=10
             )
             
-            return response.status_code == 204
+            if response.status_code != 204:
+                print(f"Discord webhook failed (status {response.status_code}): {response.text}")
+                return False
+            
+            return True
             
         except Exception as e:
             print(f"Discord webhook error: {str(e)}")
@@ -154,7 +162,7 @@ class DiscordWebhook:
                 "title": "❌ Research Error",
                 "description": f"**Query:** {query}\n\n**Error:**\n```{error_message[:500]}```",
                 "color": 15158332,  # Red color
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.utcnow().isoformat() + "Z",
                 "footer": {
                     "text": "Dexter Financial Research Agent"
                 }
@@ -169,7 +177,11 @@ class DiscordWebhook:
                 timeout=10
             )
             
-            return response.status_code == 204
+            if response.status_code != 204:
+                print(f"Discord webhook failed (status {response.status_code}): {response.text}")
+                return False
+            
+            return True
             
         except Exception as e:
             print(f"Discord webhook error: {str(e)}")
