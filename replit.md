@@ -19,6 +19,8 @@ Dexter is a Streamlit-based financial research agent that uses a multi-agent arc
 - **Options Trading Data** - Free options analysis using yfinance with strike prices, OI, volume, IV, and calculated Greeks
 - **Unusual Flow Detection** - Identify unusual options activity based on volume/OI ratios
 - **Options Visualization** - Volume/OI bar charts and implied volatility skew plots
+- **Advanced Stock Screening** - TTM Squeeze, MOASS scanner, penny stock finder, bullish/bearish pattern detection
+- **Scheduled MOASS Hunting** - Automated scans at 7 AM & 3:05 PM EST (eagle eyes), plus 2-hour intervals with Discord alerts
 
 ## Architecture
 

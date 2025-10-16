@@ -198,3 +198,49 @@ class DiscordWebhook:
             "✅ Discord webhook successfully connected to Dexter!",
             "Webhook Test"
         )
+
+
+# Standalone function for convenience
+def send_discord_notification(webhook_url: str, title: str, message: str, color: int = 3447003) -> bool:
+    """
+    Send a notification to Discord via webhook.
+    
+    Args:
+        webhook_url: Discord webhook URL
+        title: Title of the notification
+        message: Message content
+        color: Embed color (default: blue)
+    
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    if not webhook_url:
+        return False
+    
+    webhook = DiscordWebhook(webhook_url)
+    
+    try:
+        payload = {
+            "embeds": [{
+                "title": title,
+                "description": message,
+                "color": color,
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "footer": {
+                    "text": "Dexter Financial Research Agent"
+                }
+            }]
+        }
+        
+        response = requests.post(
+            webhook_url,
+            json=payload,
+            headers={"Content-Type": "application/json"},
+            timeout=10
+        )
+        
+        return response.status_code == 204
+        
+    except Exception as e:
+        print(f"Discord notification error: {str(e)}")
+        return False
