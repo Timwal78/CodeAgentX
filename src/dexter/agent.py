@@ -167,9 +167,13 @@ class Agent:
         elif task.tool_needed == "options_greeks":
             companies = self._extract_companies_from_text(task.description)
             if companies:
-                # Try to extract strike and expiration from task description
+                # For Greeks calculation, we need the options chain first
+                # The LLM will analyze the chain data to identify key strikes
                 tool_result = self.options_tools.get_options_chain(companies[0])
                 self.api_call_count += 1
+                
+                # Note: Specific Greeks calculation requires strike/expiration
+                # which the validation/answer agent can request if needed
         
         elif task.tool_needed == "unusual_options":
             companies = self._extract_companies_from_text(task.description)

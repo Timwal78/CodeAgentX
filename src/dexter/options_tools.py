@@ -78,13 +78,20 @@ class OptionsDataTools:
                     "days_to_expiration": self._days_to_expiration(exp_date)
                 }
                 
+                # Calculate time to expiration for Greeks
+                T = self._days_to_expiration(exp_date) / 365.0
+                
                 if option_type != 'puts':
                     calls_df = chain.calls
-                    exp_data["calls"] = self._process_options_data(calls_df, "call")
+                    exp_data["calls"] = self._process_options_data(
+                        calls_df, "call", all_data["current_price"], T
+                    )
                 
                 if option_type != 'calls':
                     puts_df = chain.puts
-                    exp_data["puts"] = self._process_options_data(puts_df, "put")
+                    exp_data["puts"] = self._process_options_data(
+                        puts_df, "put", all_data["current_price"], T
+                    )
                 
                 all_data["expirations"].append(exp_data)
             
@@ -297,18 +304,40 @@ class OptionsDataTools:
         exp_date = datetime.strptime(expiration, '%Y-%m-%d')
         return (exp_date - datetime.now()).days
     
-    def _process_options_data(self, df: pd.DataFrame, option_type: str) -> List[Dict]:
-        """Process options DataFrame into list of dicts."""
+    def _process_options_data(
+        self, 
+        df: pd.DataFrame, 
+        option_type: str,
+        current_price: float,
+        T: float
+    ) -> List[Dict]:
+        """Process options DataFrame into list of dicts with Greeks."""
         result = []
         for _, row in df.iterrows():
+            strike = float(row['strike'])
+            iv = float(row.get('impliedVolatility', 0.3))
+            
+            # Calculate Greeks if we have valid inputs
+            greeks = {}
+            if T > 0 and iv > 0:
+                greeks = self._black_scholes_greeks(
+                    S=current_price,
+                    K=strike,
+                    T=T,
+                    r=self.risk_free_rate,
+                    sigma=iv,
+                    option_type=option_type
+                )
+            
             result.append({
-                "strike": float(row['strike']),
+                "strike": strike,
                 "last_price": float(row.get('lastPrice', 0)),
                 "bid": float(row.get('bid', 0)),
                 "ask": float(row.get('ask', 0)),
                 "volume": int(row.get('volume', 0)),
                 "open_interest": int(row.get('openInterest', 0)),
-                "implied_volatility": float(row.get('impliedVolatility', 0))
+                "implied_volatility": iv,
+                "greeks": greeks
             })
         return result
     
