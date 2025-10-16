@@ -118,6 +118,73 @@ def main():
                     st.info("No research history yet")
             except Exception as e:
                 st.error(f"Error loading history: {str(e)}")
+            
+            # Query Templates
+            st.markdown("---")
+            st.subheader("📑 Query Templates")
+            
+            tab1, tab2 = st.tabs(["Browse", "Create"])
+            
+            with tab1:
+                try:
+                    categories = st.session_state.db.get_template_categories()
+                    category_filter = st.selectbox(
+                        "Category",
+                        options=["All"] + categories,
+                        key="template_category_filter"
+                    )
+                    
+                    if category_filter == "All":
+                        templates = st.session_state.db.get_templates()
+                    else:
+                        templates = st.session_state.db.get_templates(category=category_filter)
+                    
+                    if templates:
+                        for template in templates:
+                            col1, col2 = st.columns([3, 1])
+                            with col1:
+                                if st.button(
+                                    f"📄 {template['name']}", 
+                                    key=f"template_{template['id']}",
+                                    help=template.get('description', template['query_text'][:100])
+                                ):
+                                    st.session_state.query_text = template['query_text']
+                                    st.rerun()
+                            with col2:
+                                if st.button("🗑️", key=f"del_template_{template['id']}", help="Delete"):
+                                    st.session_state.db.delete_template(template['id'])
+                                    st.rerun()
+                    else:
+                        st.info("No templates yet. Create one in the 'Create' tab!")
+                except Exception as e:
+                    st.error(f"Error loading templates: {str(e)}")
+            
+            with tab2:
+                with st.form("create_template_form"):
+                    template_name = st.text_input("Template Name", placeholder="e.g., Revenue Growth Analysis")
+                    template_query = st.text_area(
+                        "Query Template", 
+                        placeholder="e.g., Compare {company1} and {company2}'s revenue growth over the last {quarters} quarters",
+                        height=100
+                    )
+                    template_category = st.text_input("Category", placeholder="e.g., Revenue Analysis")
+                    template_description = st.text_input("Description (optional)", placeholder="Brief description of this template")
+                    
+                    if st.form_submit_button("💾 Save Template"):
+                        if template_name and template_query:
+                            try:
+                                st.session_state.db.save_template(
+                                    name=template_name,
+                                    query_text=template_query,
+                                    category=template_category or None,
+                                    description=template_description or None
+                                )
+                                st.success("✅ Template saved!")
+                                st.rerun()
+                            except Exception as e:
+                                st.error(f"Error saving template: {str(e)}")
+                        else:
+                            st.warning("Please provide a name and query text")
     
     # Main interface
     if not (openai_key and financial_key):
