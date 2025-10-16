@@ -1,10 +1,12 @@
 import streamlit as st
 import os
+from datetime import datetime
 from dotenv import load_dotenv
 from src.dexter.agent import Agent
 from src.dexter.utils.discord import DiscordWebhook
 from src.dexter.database import Database
 from src.dexter.utils.charts import FinancialCharts
+from src.dexter.utils.export import ExportManager
 import traceback
 import uuid
 
@@ -262,15 +264,49 @@ FINANCIAL_DATASETS_API_KEY=your-financial-datasets-api-key
     if st.session_state.results:
         st.markdown("---")
         
-        col_header1, col_header2 = st.columns([3, 1])
+        col_header1, col_header2, col_header3, col_header4 = st.columns([2, 1, 1, 1])
         with col_header1:
             st.header("📊 Research Results")
         with col_header2:
-            if st.button("💬 Ask Follow-up", type="secondary"):
+            if st.button("💬 Follow-up", type="secondary"):
                 previous_query = st.session_state.results.get('query', '')
                 previous_answer = st.session_state.results.get('answer', '')[:500]
                 st.session_state.query_text = f"Follow-up to: '{previous_query}'\n\nPrevious findings: {previous_answer}...\n\nMy follow-up question: "
                 st.rerun()
+        with col_header3:
+            try:
+                pdf_bytes = ExportManager.generate_pdf(
+                    query=st.session_state.results.get('query', ''),
+                    answer=st.session_state.results.get('answer', ''),
+                    tasks=st.session_state.results.get('tasks_completed', []),
+                    stats=st.session_state.results.get('stats', {})
+                )
+                st.download_button(
+                    label="📄 PDF",
+                    data=pdf_bytes,
+                    file_name=f"research_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                    mime="application/pdf",
+                    type="secondary"
+                )
+            except Exception as e:
+                st.button("📄 PDF", disabled=True, help=str(e), type="secondary")
+        with col_header4:
+            try:
+                excel_bytes = ExportManager.generate_excel(
+                    query=st.session_state.results.get('query', ''),
+                    answer=st.session_state.results.get('answer', ''),
+                    tasks=st.session_state.results.get('tasks_completed', []),
+                    stats=st.session_state.results.get('stats', {})
+                )
+                st.download_button(
+                    label="📊 Excel",
+                    data=excel_bytes,
+                    file_name=f"research_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    type="secondary"
+                )
+            except Exception as e:
+                st.button("📊 Excel", disabled=True, help=str(e), type="secondary")
         
         # Main answer
         if 'answer' in st.session_state.results:
