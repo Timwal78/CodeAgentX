@@ -7,6 +7,7 @@ from src.dexter.utils.discord import DiscordWebhook
 from src.dexter.database import Database
 from src.dexter.utils.charts import FinancialCharts
 from src.dexter.utils.export import ExportManager
+from src.dexter.scheduler import MOASSScheduler
 import traceback
 import uuid
 
@@ -41,6 +42,10 @@ def main():
         except Exception as e:
             st.session_state.db = None
             st.warning(f"Database connection unavailable: {str(e)}")
+    if 'scheduler' not in st.session_state:
+        st.session_state.scheduler = None
+    if 'scheduler_running' not in st.session_state:
+        st.session_state.scheduler_running = False
     
     # Sidebar configuration
     with st.sidebar:
@@ -129,6 +134,83 @@ def main():
             4. Click "New Webhook" or "Copy Webhook URL"
             5. Paste the URL above
             """)
+        
+        # Scheduled Scanning
+        st.markdown("---")
+        st.subheader("⏰ Scheduled Scanning")
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🦅 Start Scheduler" if not st.session_state.scheduler_running else "⏸️ Stop Scheduler"):
+                try:
+                    if not st.session_state.scheduler_running:
+                        # Start scheduler
+                        webhook_url = st.session_state.get('discord_webhook')
+                        st.session_state.scheduler = MOASSScheduler(discord_webhook_url=webhook_url)
+                        st.session_state.scheduler.start()
+                        st.session_state.scheduler_running = True
+                        st.success("🦅 Scheduler started!")
+                    else:
+                        # Stop scheduler
+                        if st.session_state.scheduler:
+                            st.session_state.scheduler.stop()
+                        st.session_state.scheduler_running = False
+                        st.info("Scheduler stopped")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Scheduler error: {str(e)}")
+        
+        with col2:
+            if st.button("🔍 Manual Scan"):
+                try:
+                    webhook_url = st.session_state.get('discord_webhook')
+                    if not st.session_state.scheduler:
+                        st.session_state.scheduler = MOASSScheduler(discord_webhook_url=webhook_url)
+                    
+                    with st.spinner("Running eagle eyes scan..."):
+                        results = st.session_state.scheduler.manual_scan("eagle_eyes")
+                        if results:
+                            st.success("✅ Scan complete!")
+                            st.session_state.last_scan_results = results
+                        else:
+                            st.warning("Scan completed with errors")
+                except Exception as e:
+                    st.error(f"Scan error: {str(e)}")
+        
+        # Show schedule status
+        if st.session_state.scheduler_running:
+            st.success("🟢 Scheduler Active")
+            with st.expander("📅 Schedule Details"):
+                st.markdown("""
+                **Eagle Eyes Scans** (comprehensive):
+                - 🦅 **7:00 AM EST** - Market Open Prep
+                - 🦅 **3:05 PM EST** - Power Hour Hunter
+                
+                **Regular Scans** (every 2 hours):
+                - 📊 9:00 AM EST
+                - 📊 11:00 AM EST
+                - 📊 1:00 PM EST
+                
+                **What's scanned:**
+                - MOASS candidates
+                - TTM Squeeze setups
+                - Bullish/bearish patterns
+                - Penny stock opportunities
+                - Double bottom + put wall
+                """)
+        
+        # Show recent scans
+        if st.session_state.scheduler and hasattr(st.session_state.scheduler, 'scan_history'):
+            history = st.session_state.scheduler.get_scan_history(limit=5)
+            if history:
+                with st.expander("📊 Recent Scans"):
+                    for scan in reversed(history):
+                        scan_time = datetime.fromisoformat(scan['timestamp']).strftime('%I:%M %p')
+                        scan_type = "🦅 Eagle Eyes" if scan['scan_type'] == 'eagle_eyes' else "📊 Regular"
+                        findings_count = sum(len(v) for v in scan.get('findings', {}).values())
+                        st.text(f"{scan_type} - {scan_time} - {findings_count} findings")
+        
+        st.markdown("---")
         
         # Agent configuration
         st.subheader("Safety Limits")

@@ -63,6 +63,14 @@ Dexter is a Streamlit-based financial research agent that uses a multi-agent arc
 - **Pattern Detection** - Automatic technical pattern recognition across markets
 - **Momentum Scanner** - Volume confirmation, RSI, MACD, moving averages
 
+### Scheduled Scanning (NEW!)
+- **Automated MOASS Hunting** - Background scans run automatically on schedule
+- **Eagle Eyes Scans** - Comprehensive market analysis at 7:00 AM EST and 3:05 PM EST (power hour)
+- **Regular Scans** - Every 2 hours (9 AM, 11 AM, 1 PM EST) for continuous monitoring
+- **Discord Alerts** - Automatic notifications when notable setups detected
+- **Manual Scans** - Run immediate eagle eyes or regular scans on demand
+- **Scan History** - View recent scan results and findings
+
 ### Data Visualization
 - Automatic chart generation from financial data
 - Revenue trend line charts
