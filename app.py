@@ -48,19 +48,36 @@ def main():
         
         # API Key status
         openai_key = os.getenv("OPENAI_API_KEY", "")
+        gemini_key = os.getenv("GEMINI_API_KEY", "")
         financial_key = os.getenv("FINANCIAL_DATASETS_API_KEY", "")
         alpha_vantage_key = os.getenv("ALPHA_VANTAGE_API_KEY", "")
         fmp_key = os.getenv("FMP_API_KEY", "")
         
-        if openai_key and financial_key:
-            st.success("✅ Primary API Keys configured")
+        # Show LLM Provider status
+        st.subheader("🤖 AI Provider")
+        if gemini_key:
+            st.success("✅ Using Google Gemini (FREE)")
+        elif openai_key:
+            st.info("Using OpenAI (Requires credits)")
         else:
-            st.error("❌ Missing Required API Keys")
-            st.markdown("Please ensure you have set:")
-            if not openai_key:
-                st.markdown("- `OPENAI_API_KEY`")
-            if not financial_key:
-                st.markdown("- `FINANCIAL_DATASETS_API_KEY`")
+            st.error("❌ No AI provider configured")
+            st.markdown("""
+            **Get a FREE API key:**
+            1. Go to [Google AI Studio](https://aistudio.google.com/apikey)
+            2. Click "Create API Key"
+            3. Copy the key and add it as `GEMINI_API_KEY` secret
+            
+            *OR use OpenAI (requires credits):*
+            - Add `OPENAI_API_KEY` from [OpenAI Platform](https://platform.openai.com/api-keys)
+            """)
+        
+        # Financial data API status
+        st.subheader("📊 Financial Data")
+        if financial_key:
+            st.success("✅ Financial Datasets API configured")
+        else:
+            st.error("❌ Missing FINANCIAL_DATASETS_API_KEY")
+            st.markdown("Get it from [financialdatasets.ai](https://financialdatasets.ai/)")
         
         # Optional API Keys for fallback data sources
         fallback_sources = []
