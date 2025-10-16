@@ -16,6 +16,9 @@ Dexter is a Streamlit-based financial research agent that uses a multi-agent arc
 - **Alternative Data Sources** - Added fallback support for Alpha Vantage and Financial Modeling Prep APIs
 - **Follow-up Questions** - Implemented context-aware follow-up question functionality
 - **Discord Webhooks** - Rich embed notifications for research results and errors sent to Discord channels
+- **Options Trading Data** - Free options analysis using yfinance with strike prices, OI, volume, IV, and calculated Greeks
+- **Unusual Flow Detection** - Identify unusual options activity based on volume/OI ratios
+- **Options Visualization** - Volume/OI bar charts and implied volatility skew plots
 
 ## Architecture
 

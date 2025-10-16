@@ -178,6 +178,130 @@ class FinancialCharts:
         return fig
     
     @staticmethod
+    def create_options_volume_chart(options_data: Dict[str, Any]) -> Optional[go.Figure]:
+        """Create options volume/OI bar chart."""
+        if not options_data or 'expirations' not in options_data:
+            return None
+        
+        try:
+            # Get first expiration data
+            exp_data = options_data['expirations'][0]
+            
+            if 'calls' not in exp_data or not exp_data['calls']:
+                return None
+            
+            strikes = [opt['strike'] for opt in exp_data['calls']]
+            call_volume = [opt['volume'] for opt in exp_data['calls']]
+            call_oi = [opt['open_interest'] for opt in exp_data['calls']]
+            
+            fig = go.Figure()
+            
+            fig.add_trace(go.Bar(
+                x=strikes,
+                y=call_volume,
+                name='Call Volume',
+                marker_color='green'
+            ))
+            
+            fig.add_trace(go.Bar(
+                x=strikes,
+                y=call_oi,
+                name='Call Open Interest',
+                marker_color='lightgreen'
+            ))
+            
+            if 'puts' in exp_data and exp_data['puts']:
+                put_volume = [opt['volume'] for opt in exp_data['puts']]
+                put_oi = [opt['open_interest'] for opt in exp_data['puts']]
+                
+                fig.add_trace(go.Bar(
+                    x=strikes,
+                    y=put_volume,
+                    name='Put Volume',
+                    marker_color='red'
+                ))
+                
+                fig.add_trace(go.Bar(
+                    x=strikes,
+                    y=put_oi,
+                    name='Put Open Interest',
+                    marker_color='lightcoral'
+                ))
+            
+            fig.update_layout(
+                title=f"Options Activity - {options_data.get('symbol', 'Unknown')}",
+                xaxis_title="Strike Price",
+                yaxis_title="Contracts",
+                barmode='group',
+                template='plotly_white',
+                height=500
+            )
+            
+            return fig
+        except Exception as e:
+            print(f"Error creating options volume chart: {e}")
+            return None
+    
+    @staticmethod
+    def create_iv_chart(options_data: Dict[str, Any]) -> Optional[go.Figure]:
+        """Create implied volatility chart."""
+        if not options_data or 'expirations' not in options_data:
+            return None
+        
+        try:
+            exp_data = options_data['expirations'][0]
+            
+            if 'calls' not in exp_data:
+                return None
+            
+            strikes = [opt['strike'] for opt in exp_data['calls']]
+            call_iv = [opt['implied_volatility'] * 100 for opt in exp_data['calls']]
+            
+            fig = go.Figure()
+            
+            fig.add_trace(go.Scatter(
+                x=strikes,
+                y=call_iv,
+                mode='lines+markers',
+                name='Call IV',
+                line=dict(color='blue', width=3),
+                marker=dict(size=8)
+            ))
+            
+            if 'puts' in exp_data and exp_data['puts']:
+                put_iv = [opt['implied_volatility'] * 100 for opt in exp_data['puts']]
+                fig.add_trace(go.Scatter(
+                    x=strikes,
+                    y=put_iv,
+                    mode='lines+markers',
+                    name='Put IV',
+                    line=dict(color='red', width=3),
+                    marker=dict(size=8)
+                ))
+            
+            # Add current price line if available
+            if 'current_price' in options_data:
+                fig.add_vline(
+                    x=options_data['current_price'],
+                    line_dash="dash",
+                    line_color="gray",
+                    annotation_text="Current Price"
+                )
+            
+            fig.update_layout(
+                title=f"Implied Volatility Skew - {options_data.get('symbol', 'Unknown')}",
+                xaxis_title="Strike Price",
+                yaxis_title="Implied Volatility (%)",
+                template='plotly_white',
+                height=400
+            )
+            
+            return fig
+        except Exception as e:
+            print(f"Error creating IV chart: {e}")
+            return None
+    
+    @staticmethod
     def analyze_and_create_charts(tasks_completed: List[Dict]) -> List[go.Figure]:
         """Automatically analyze tasks and create relevant charts."""
         charts = []
@@ -193,5 +317,19 @@ class FinancialCharts:
         margin_chart = FinancialCharts.create_margin_comparison_chart(metrics)
         if margin_chart:
             charts.append(margin_chart)
+        
+        # Check for options data in tasks
+        for task in tasks_completed:
+            data = task.get('data', {})
+            
+            # Options chain data
+            if 'expirations' in data:
+                volume_chart = FinancialCharts.create_options_volume_chart(data)
+                if volume_chart:
+                    charts.append(volume_chart)
+                
+                iv_chart = FinancialCharts.create_iv_chart(data)
+                if iv_chart:
+                    charts.append(iv_chart)
         
         return charts

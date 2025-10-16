@@ -110,5 +110,24 @@ SPECIALIZED_PROMPTS = {
 - Liquidity position and cash management
 - Debt levels and servicing capability
 - Working capital efficiency
-- Financial risk factors"""
+- Financial risk factors""",
+
+    "options_analysis": """Analyze options market data and trading activity. Focus on:
+- Options chain structure (strike distribution, expiration dates)
+- Open interest and volume patterns
+- Implied volatility levels and skew
+- Put/call ratios and sentiment indicators
+- Greeks analysis (delta, gamma, theta, vega)
+- Unusual options activity and large trades
+- Support/resistance levels based on max pain
+- Potential institutional positioning""",
+
+    "unusual_flow_detection": """Identify and analyze unusual options flow. Examine:
+- Volume to open interest ratios (highlighting unusual spikes)
+- Block trades and sweep orders
+- Out-of-the-money activity indicating speculation
+- Near-term vs far-dated positioning
+- Directional bias from call/put imbalances
+- Potential catalysts or events driving activity
+- Historical context for current activity levels"""
 }

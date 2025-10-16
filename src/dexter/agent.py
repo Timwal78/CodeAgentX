@@ -5,6 +5,7 @@ from datetime import datetime
 
 from .model import LLMInterface
 from .tools import FinancialDataTools
+from .options_tools import OptionsDataTools
 from .prompts import SYSTEM_PROMPTS
 from .schemas import Task, TaskResult, ResearchResult
 from .utils.safety import SafetyManager
@@ -24,6 +25,7 @@ class Agent:
         # Initialize components
         self.llm = LLMInterface()
         self.tools = FinancialDataTools()
+        self.options_tools = OptionsDataTools()
         self.safety = SafetyManager(max_steps, max_steps_per_task)
         self.validator = ValidationManager()
         
@@ -101,9 +103,15 @@ class Agent:
         self.current_step += 1
         self.api_call_count += 1
         
+        # Combine stock and options tool descriptions
+        all_tools = {
+            **self.tools.get_tool_descriptions(),
+            **self.options_tools.get_tool_descriptions()
+        }
+        
         prompt = SYSTEM_PROMPTS["planning"].format(
             query=query,
-            available_tools=self.tools.get_tool_descriptions()
+            available_tools=all_tools
         )
         
         response = self.llm.generate_structured_response(
@@ -148,6 +156,31 @@ class Agent:
             companies = self._extract_companies_from_text(task.description)
             if companies:
                 tool_result = self.tools.get_financial_data(companies[0])
+                self.api_call_count += 1
+        
+        elif task.tool_needed == "options_chain":
+            companies = self._extract_companies_from_text(task.description)
+            if companies:
+                tool_result = self.options_tools.get_options_chain(companies[0])
+                self.api_call_count += 1
+        
+        elif task.tool_needed == "options_greeks":
+            companies = self._extract_companies_from_text(task.description)
+            if companies:
+                # Try to extract strike and expiration from task description
+                tool_result = self.options_tools.get_options_chain(companies[0])
+                self.api_call_count += 1
+        
+        elif task.tool_needed == "unusual_options":
+            companies = self._extract_companies_from_text(task.description)
+            if companies:
+                tool_result = self.options_tools.identify_unusual_activity(companies[0])
+                self.api_call_count += 1
+        
+        elif task.tool_needed == "put_call_ratio":
+            companies = self._extract_companies_from_text(task.description)
+            if companies:
+                tool_result = self.options_tools.calculate_put_call_ratio(companies[0])
                 self.api_call_count += 1
         
         # Generate analysis based on tool result
