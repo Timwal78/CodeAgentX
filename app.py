@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from src.dexter.agent import Agent
 from src.dexter.utils.discord import DiscordWebhook
 from src.dexter.database import Database
+from src.dexter.utils.charts import FinancialCharts
 import traceback
 import uuid
 
@@ -275,6 +276,17 @@ FINANCIAL_DATASETS_API_KEY=your-financial-datasets-api-key
         if 'answer' in st.session_state.results:
             st.subheader("Summary")
             st.markdown(st.session_state.results['answer'])
+        
+        # Data Visualizations
+        if 'tasks_completed' in st.session_state.results and st.session_state.results['tasks_completed']:
+            try:
+                charts = FinancialCharts.analyze_and_create_charts(st.session_state.results['tasks_completed'])
+                if charts:
+                    st.subheader("📈 Visual Analysis")
+                    for chart in charts:
+                        st.plotly_chart(chart, use_container_width=True)
+            except Exception as chart_error:
+                pass
         
         # Detailed findings
         if 'tasks_completed' in st.session_state.results:
