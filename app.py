@@ -3,7 +3,9 @@ import os
 from dotenv import load_dotenv
 from src.dexter.agent import Agent
 from src.dexter.utils.discord import DiscordWebhook
+from src.dexter.database import Database
 import traceback
+import uuid
 
 # Load environment variables
 load_dotenv()
@@ -106,6 +108,14 @@ FINANCIAL_DATASETS_API_KEY=your-financial-datasets-api-key
         st.session_state.results = None
     if 'execution_log' not in st.session_state:
         st.session_state.execution_log = []
+    if 'session_id' not in st.session_state:
+        st.session_state.session_id = str(uuid.uuid4())
+    if 'db' not in st.session_state:
+        try:
+            st.session_state.db = Database()
+        except Exception as e:
+            st.session_state.db = None
+            st.warning(f"Database connection unavailable: {str(e)}")
     
     col1, col2 = st.columns([1, 4])
     
@@ -157,6 +167,20 @@ FINANCIAL_DATASETS_API_KEY=your-financial-datasets-api-key
                     
                     status_placeholder.success("✅ Research completed!")
                     progress_placeholder.progress(1.0)
+                    
+                    # Save to database
+                    if st.session_state.db:
+                        try:
+                            result_id = st.session_state.db.save_research_result(
+                                query=query,
+                                answer=results.get('answer', ''),
+                                tasks_completed=results.get('tasks_completed', []),
+                                stats=results.get('stats', {}),
+                                session_id=st.session_state.session_id
+                            )
+                            st.session_state.last_saved_id = result_id
+                        except Exception as db_error:
+                            st.warning(f"⚠️ Could not save to database: {str(db_error)}")
                     
                     # Send to Discord if webhook is configured
                     discord_webhook_url = st.session_state.get('discord_webhook')
