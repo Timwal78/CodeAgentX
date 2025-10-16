@@ -7,10 +7,12 @@ from datetime import datetime, timedelta
 
 class FinancialDataTools:
     """
-    Tools for retrieving real-time financial data from Financial Datasets API.
+    Tools for retrieving real-time financial data from Financial Datasets API with fallback support.
+    Supports multiple data providers: Financial Datasets, Alpha Vantage, and Financial Modeling Prep.
     """
     
     def __init__(self):
+        # Primary API - Financial Datasets
         self.api_key = os.getenv("FINANCIAL_DATASETS_API_KEY")
         if not self.api_key:
             raise ValueError("FINANCIAL_DATASETS_API_KEY environment variable is required")
@@ -20,6 +22,10 @@ class FinancialDataTools:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json"
         }
+        
+        # Alternative APIs (optional)
+        self.alpha_vantage_key = os.getenv("ALPHA_VANTAGE_API_KEY")
+        self.fmp_key = os.getenv("FMP_API_KEY")
     
     def get_tool_descriptions(self) -> Dict[str, str]:
         """
@@ -173,38 +179,177 @@ class FinancialDataTools:
         return ratios
     
     def _get_fallback_income_data(self, symbol: str) -> Dict[str, Any]:
-        """Fallback method when API fails - returns structure indicating data unavailable."""
+        """Fallback method using alternative data providers."""
+        # Try Alpha Vantage first
+        if self.alpha_vantage_key:
+            try:
+                url = f"https://www.alphavantage.co/query?function=INCOME_STATEMENT&symbol={symbol}&apikey={self.alpha_vantage_key}"
+                response = requests.get(url, timeout=30)
+                if response.status_code == 200:
+                    data = response.json()
+                    if "annualReports" in data and data["annualReports"]:
+                        return {
+                            "source": "Alpha Vantage",
+                            "data": data["annualReports"][:4],
+                            "symbol": symbol
+                        }
+            except Exception as e:
+                print(f"Alpha Vantage fallback failed: {str(e)}")
+        
+        # Try FMP as second fallback
+        if self.fmp_key:
+            try:
+                url = f"https://financialmodelingprep.com/api/v3/income-statement/{symbol}?apikey={self.fmp_key}&limit=4"
+                response = requests.get(url, timeout=30)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data:
+                        return {
+                            "source": "Financial Modeling Prep",
+                            "data": data,
+                            "symbol": symbol
+                        }
+            except Exception as e:
+                print(f"FMP fallback failed: {str(e)}")
+        
+        # If all fallbacks fail, return error
         return {
             "symbol": symbol,
             "statement_type": "income_statement",
-            "error": "Unable to retrieve income statement data",
+            "error": "Unable to retrieve income statement data from any source",
             "timestamp": datetime.now().isoformat()
         }
     
     def _get_fallback_balance_data(self, symbol: str) -> Dict[str, Any]:
-        """Fallback method when API fails - returns structure indicating data unavailable."""
+        """Fallback method using alternative data providers."""
+        # Try Alpha Vantage first
+        if self.alpha_vantage_key:
+            try:
+                url = f"https://www.alphavantage.co/query?function=BALANCE_SHEET&symbol={symbol}&apikey={self.alpha_vantage_key}"
+                response = requests.get(url, timeout=30)
+                if response.status_code == 200:
+                    data = response.json()
+                    if "annualReports" in data and data["annualReports"]:
+                        return {
+                            "source": "Alpha Vantage",
+                            "data": data["annualReports"][:4],
+                            "symbol": symbol
+                        }
+            except Exception as e:
+                print(f"Alpha Vantage balance sheet fallback failed: {str(e)}")
+        
+        # Try FMP as second fallback
+        if self.fmp_key:
+            try:
+                url = f"https://financialmodelingprep.com/api/v3/balance-sheet-statement/{symbol}?apikey={self.fmp_key}&limit=4"
+                response = requests.get(url, timeout=30)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data:
+                        return {
+                            "source": "Financial Modeling Prep",
+                            "data": data,
+                            "symbol": symbol
+                        }
+            except Exception as e:
+                print(f"FMP balance sheet fallback failed: {str(e)}")
+        
         return {
             "symbol": symbol,
             "statement_type": "balance_sheet",
-            "error": "Unable to retrieve balance sheet data",
+            "error": "Unable to retrieve balance sheet data from any source",
             "timestamp": datetime.now().isoformat()
         }
     
     def _get_fallback_cash_flow_data(self, symbol: str) -> Dict[str, Any]:
-        """Fallback method when API fails - returns structure indicating data unavailable."""
+        """Fallback method using alternative data providers."""
+        # Try Alpha Vantage first
+        if self.alpha_vantage_key:
+            try:
+                url = f"https://www.alphavantage.co/query?function=CASH_FLOW&symbol={symbol}&apikey={self.alpha_vantage_key}"
+                response = requests.get(url, timeout=30)
+                if response.status_code == 200:
+                    data = response.json()
+                    if "annualReports" in data and data["annualReports"]:
+                        return {
+                            "source": "Alpha Vantage",
+                            "data": data["annualReports"][:4],
+                            "symbol": symbol
+                        }
+            except Exception as e:
+                print(f"Alpha Vantage cash flow fallback failed: {str(e)}")
+        
+        # Try FMP as second fallback
+        if self.fmp_key:
+            try:
+                url = f"https://financialmodelingprep.com/api/v3/cash-flow-statement/{symbol}?apikey={self.fmp_key}&limit=4"
+                response = requests.get(url, timeout=30)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data:
+                        return {
+                            "source": "Financial Modeling Prep",
+                            "data": data,
+                            "symbol": symbol
+                        }
+            except Exception as e:
+                print(f"FMP cash flow fallback failed: {str(e)}")
+        
         return {
             "symbol": symbol,
             "statement_type": "cash_flow",
-            "error": "Unable to retrieve cash flow data",
+            "error": "Unable to retrieve cash flow data from any source",
             "timestamp": datetime.now().isoformat()
         }
     
     def _get_fallback_profile_data(self, symbol: str) -> Dict[str, Any]:
-        """Fallback method when API fails - returns structure indicating data unavailable."""
+        """Fallback method using alternative data providers."""
+        # Try Alpha Vantage first
+        if self.alpha_vantage_key:
+            try:
+                url = f"https://www.alphavantage.co/query?function=OVERVIEW&symbol={symbol}&apikey={self.alpha_vantage_key}"
+                response = requests.get(url, timeout=30)
+                if response.status_code == 200:
+                    data = response.json()
+                    if "Symbol" in data:
+                        return {
+                            "source": "Alpha Vantage",
+                            "symbol": data.get("Symbol"),
+                            "name": data.get("Name"),
+                            "exchange": data.get("Exchange"),
+                            "sector": data.get("Sector"),
+                            "industry": data.get("Industry"),
+                            "description": data.get("Description")
+                        }
+            except Exception as e:
+                print(f"Alpha Vantage profile fallback failed: {str(e)}")
+        
+        # Try FMP as second fallback
+        if self.fmp_key:
+            try:
+                url = f"https://financialmodelingprep.com/api/v3/profile/{symbol}?apikey={self.fmp_key}"
+                response = requests.get(url, timeout=30)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data and len(data) > 0:
+                        profile = data[0]
+                        return {
+                            "source": "Financial Modeling Prep",
+                            "symbol": profile.get("symbol"),
+                            "name": profile.get("companyName"),
+                            "exchange": profile.get("exchangeShortName"),
+                            "sector": profile.get("sector"),
+                            "industry": profile.get("industry"),
+                            "description": profile.get("description"),
+                            "website": profile.get("website")
+                        }
+            except Exception as e:
+                print(f"FMP profile fallback failed: {str(e)}")
+        
         return {
             "symbol": symbol,
             "company_name": f"Company with symbol {symbol}",
-            "error": "Unable to retrieve company profile data",
+            "error": "Unable to retrieve company profile data from any source",
             "timestamp": datetime.now().isoformat()
         }
     

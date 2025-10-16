@@ -8,12 +8,14 @@ Dexter is a Streamlit-based financial research agent that uses a multi-agent arc
 
 ## Recent Changes
 
-### Discord Webhook Integration (October 16, 2025)
-- Added Discord webhook functionality to send research results to Discord channels
-- Created Discord utility module (`src/dexter/utils/discord.py`) with rich embed formatting
-- Added webhook configuration UI in Streamlit sidebar
-- Implemented test webhook button for quick validation
-- Added automatic notifications for both successful research and errors
+### Latest Enhancements (October 16, 2025)
+- **PostgreSQL Database Integration** - Added conversation history persistence with full search capability
+- **Data Visualization** - Integrated Plotly charts for revenue trends, margin comparisons, and financial metrics
+- **Export Functionality** - Built PDF and Excel export for research reports with formatted tables and statistics
+- **Query Templates System** - Created template library for saving, browsing, and executing reusable analysis queries
+- **Alternative Data Sources** - Added fallback support for Alpha Vantage and Financial Modeling Prep APIs
+- **Follow-up Questions** - Implemented context-aware follow-up question functionality
+- **Discord Webhooks** - Rich embed notifications for research results and errors sent to Discord channels
 
 ## Architecture
 
@@ -26,37 +28,52 @@ Dexter is a Streamlit-based financial research agent that uses a multi-agent arc
 
 ### Key Components
 
-- `app.py` - Streamlit web interface with Discord webhook integration
+- `app.py` - Streamlit web interface with all features
 - `src/dexter/agent.py` - Main agent orchestration logic
 - `src/dexter/model.py` - LLM interface (OpenAI GPT-5)
-- `src/dexter/tools.py` - Financial data retrieval tools
+- `src/dexter/tools.py` - Financial data retrieval with multi-source fallback
 - `src/dexter/prompts.py` - System prompts for each agent
 - `src/dexter/schemas.py` - Pydantic data models
+- `src/dexter/database.py` - PostgreSQL integration for history and templates
 - `src/dexter/utils/safety.py` - Safety manager for preventing runaway execution
 - `src/dexter/utils/validation.py` - Validation manager for quality checks
 - `src/dexter/utils/discord.py` - Discord webhook integration
+- `src/dexter/utils/charts.py` - Plotly visualization for financial data
+- `src/dexter/utils/export.py` - PDF and Excel export functionality
 
 ## Features
 
 ### Core Capabilities
 - Intelligent task decomposition of complex financial queries
-- Real-time financial data retrieval (income statements, balance sheets, cash flow)
+- Multi-source financial data retrieval with automatic fallback (Financial Datasets, Alpha Vantage, FMP)
 - Self-validation and iterative refinement of results
 - Safety features (loop detection, step limits)
 - Comprehensive execution logging and statistics
+- PostgreSQL-based conversation history with full-text search
 
-### Discord Integration
-- Send research results as rich Discord embeds
-- Automatic error notifications
-- Task breakdown visibility
-- Execution statistics in Discord
-- Test webhook functionality
+### Data Visualization
+- Automatic chart generation from financial data
+- Revenue trend line charts
+- Margin and ratio comparison bar charts
+- Interactive Plotly visualizations
+
+### Export & Sharing
+- PDF report generation with formatted tables and statistics
+- Excel workbook export with multiple sheets (summary, stats, tasks)
+- Discord webhook integration with rich embeds
+- Automatic error notifications and task breakdowns
+
+### Query Templates
+- Save reusable query templates with categories
+- Browse and execute template library
+- Template management (create, delete, organize)
+- Parameter substitution support
 
 ### Safety Features
 - Global step limit (configurable, default: 20)
 - Per-task step limit (configurable, default: 5)
 - Loop detection to prevent infinite execution
-- API rate limiting
+- Multi-provider API rate limiting
 - Execution timeouts
 
 ## Configuration
@@ -69,6 +86,10 @@ Dexter is a Streamlit-based financial research agent that uses a multi-agent arc
 - Discord webhook URL (configured in the Streamlit sidebar)
 - Max steps (5-50, default: 20)
 - Max steps per task (2-10, default: 5)
+
+### Optional API Keys (Fallback Data Sources)
+- `ALPHA_VANTAGE_API_KEY` - Free tier: 25 calls/day (https://www.alphavantage.co/)
+- `FMP_API_KEY` - Financial Modeling Prep API (https://financialmodelingprep.com/)
 
 ## Example Queries
 
@@ -126,9 +147,9 @@ streamlit run app.py --server.port 5000
 ## Future Enhancements
 
 Potential improvements include:
-- Conversation history and follow-up questions
-- Data visualization charts for financial metrics
-- Export functionality (PDF/Excel)
-- Multiple data source support
-- Saved query templates
 - Enhanced Discord features (interactive buttons, charts)
+- Real-time streaming responses
+- Multi-currency support
+- Advanced financial modeling capabilities
+- AI-powered insights and recommendations
+- Integration with more data providers

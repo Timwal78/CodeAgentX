@@ -24,6 +24,24 @@ def main():
     st.title("🤖 Dexter - Autonomous Financial Research Agent")
     st.markdown("*An autonomous agent for deep financial research that thinks, plans, and learns as it works.*")
     
+    # Initialize session state early
+    if 'agent' not in st.session_state:
+        st.session_state.agent = None
+    if 'results' not in st.session_state:
+        st.session_state.results = None
+    if 'execution_log' not in st.session_state:
+        st.session_state.execution_log = []
+    if 'session_id' not in st.session_state:
+        st.session_state.session_id = str(uuid.uuid4())
+    if 'query_text' not in st.session_state:
+        st.session_state.query_text = ""
+    if 'db' not in st.session_state:
+        try:
+            st.session_state.db = Database()
+        except Exception as e:
+            st.session_state.db = None
+            st.warning(f"Database connection unavailable: {str(e)}")
+    
     # Sidebar configuration
     with st.sidebar:
         st.header("Configuration")
@@ -31,16 +49,37 @@ def main():
         # API Key status
         openai_key = os.getenv("OPENAI_API_KEY", "")
         financial_key = os.getenv("FINANCIAL_DATASETS_API_KEY", "")
+        alpha_vantage_key = os.getenv("ALPHA_VANTAGE_API_KEY", "")
+        fmp_key = os.getenv("FMP_API_KEY", "")
         
         if openai_key and financial_key:
-            st.success("✅ API Keys configured")
+            st.success("✅ Primary API Keys configured")
         else:
-            st.error("❌ Missing API Keys")
+            st.error("❌ Missing Required API Keys")
             st.markdown("Please ensure you have set:")
             if not openai_key:
                 st.markdown("- `OPENAI_API_KEY`")
             if not financial_key:
                 st.markdown("- `FINANCIAL_DATASETS_API_KEY`")
+        
+        # Optional API Keys for fallback data sources
+        fallback_sources = []
+        if alpha_vantage_key:
+            fallback_sources.append("Alpha Vantage")
+        if fmp_key:
+            fallback_sources.append("Financial Modeling Prep")
+        
+        if fallback_sources:
+            st.info(f"📊 Fallback sources active: {', '.join(fallback_sources)}")
+        else:
+            with st.expander("ℹ️ Optional: Fallback Data Sources"):
+                st.markdown("""
+                For increased reliability, you can add optional API keys:
+                - `ALPHA_VANTAGE_API_KEY` - Free tier: 25 calls/day
+                - `FMP_API_KEY` - Financial Modeling Prep API
+                
+                These will be used if the primary API fails.
+                """)
         
         # Discord Webhook Configuration
         st.subheader("Discord Webhook")
@@ -197,9 +236,6 @@ FINANCIAL_DATASETS_API_KEY=your-financial-datasets-api-key
         return
     
     # Query input
-    if 'query_text' not in st.session_state:
-        st.session_state.query_text = ""
-    
     query = st.text_area(
         "Enter your financial research question:",
         value=st.session_state.query_text,
@@ -207,22 +243,6 @@ FINANCIAL_DATASETS_API_KEY=your-financial-datasets-api-key
         height=100,
         key="query_input"
     )
-    
-    # Initialize session state
-    if 'agent' not in st.session_state:
-        st.session_state.agent = None
-    if 'results' not in st.session_state:
-        st.session_state.results = None
-    if 'execution_log' not in st.session_state:
-        st.session_state.execution_log = []
-    if 'session_id' not in st.session_state:
-        st.session_state.session_id = str(uuid.uuid4())
-    if 'db' not in st.session_state:
-        try:
-            st.session_state.db = Database()
-        except Exception as e:
-            st.session_state.db = None
-            st.warning(f"Database connection unavailable: {str(e)}")
     
     col1, col2 = st.columns([1, 4])
     
