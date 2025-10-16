@@ -83,6 +83,38 @@ def main():
         - "Analyze Tesla's cash flow trends over the past year"
         - "What is Amazon's debt-to-equity ratio based on recent financials?"
         """)
+        
+        # Conversation History
+        if st.session_state.db:
+            st.markdown("---")
+            st.subheader("📜 Conversation History")
+            
+            search_term = st.text_input("Search history", placeholder="Search queries...")
+            
+            try:
+                if search_term:
+                    history = st.session_state.db.search_conversation_history(search_term, limit=10)
+                else:
+                    history = st.session_state.db.get_conversation_history(limit=10)
+                
+                if history:
+                    for item in history:
+                        query_preview = item['query'][:60] + "..." if len(item['query']) > 60 else item['query']
+                        timestamp = item['created_at'].strftime("%b %d, %H:%M") if hasattr(item['created_at'], 'strftime') else str(item['created_at'])[:16]
+                        
+                        if st.button(f"📝 {query_preview}", key=f"hist_{item['id']}", help=f"{timestamp}"):
+                            st.session_state.selected_history_id = item['id']
+                            st.session_state.results = {
+                                'query': item['query'],
+                                'answer': item['answer'],
+                                'tasks_completed': item['tasks_completed'],
+                                'stats': item['stats']
+                            }
+                            st.rerun()
+                else:
+                    st.info("No research history yet")
+            except Exception as e:
+                st.error(f"Error loading history: {str(e)}")
     
     # Main interface
     if not (openai_key and financial_key):
@@ -95,10 +127,15 @@ FINANCIAL_DATASETS_API_KEY=your-financial-datasets-api-key
         return
     
     # Query input
+    if 'query_text' not in st.session_state:
+        st.session_state.query_text = ""
+    
     query = st.text_area(
         "Enter your financial research question:",
+        value=st.session_state.query_text,
         placeholder="e.g., Compare Apple and Microsoft's revenue growth over the last 4 quarters",
-        height=100
+        height=100,
+        key="query_input"
     )
     
     # Initialize session state
