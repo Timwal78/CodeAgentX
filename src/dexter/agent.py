@@ -124,15 +124,17 @@ class Agent:
         try:
             parsed_response = json.loads(response)
             for i, task_data in enumerate(parsed_response.get("tasks", [])):
+                # Ensure all required fields have valid values (not None or empty)
                 task = Task(
-                    id=task_data.get("id", f"task_{i}"),
-                    description=task_data.get("description", ""),
-                    tool_needed=task_data.get("tool_needed", ""),
-                    dependencies=task_data.get("dependencies", [])
+                    id=task_data.get("id") or f"task_{i}",
+                    description=task_data.get("description") or f"Research: {query}",
+                    tool_needed=task_data.get("tool_needed") or "financial_data",
+                    dependencies=task_data.get("dependencies") or []
                 )
                 tasks.append(task)
-        except json.JSONDecodeError:
+        except (json.JSONDecodeError, Exception) as e:
             # Fallback: create a single generic task
+            print(f"Planning agent JSON parse error: {e}")
             tasks.append(Task(
                 id="task_1",
                 description=f"Research: {query}",

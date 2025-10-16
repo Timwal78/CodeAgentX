@@ -22,7 +22,8 @@ class LLMInterface:
         if self.gemini_key:
             try:
                 genai.configure(api_key=self.gemini_key)
-                self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+                # Use Gemini 2.0 Flash (1.5 Flash was retired in April 2025)
+                self.gemini_model = genai.GenerativeModel('gemini-2.0-flash-exp')
                 self.provider = "gemini"
             except:
                 pass
