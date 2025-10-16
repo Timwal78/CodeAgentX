@@ -36,6 +36,28 @@ def main():
             if not financial_key:
                 st.markdown("- `FINANCIAL_DATASETS_API_KEY`")
         
+        # Discord Webhook Configuration
+        st.subheader("Discord Webhook")
+        discord_webhook_url = st.text_input(
+            "Discord Webhook URL (optional)",
+            type="password",
+            help="Paste your Discord webhook URL to receive research results in Discord"
+        )
+        if discord_webhook_url:
+            st.session_state.discord_webhook = discord_webhook_url
+            st.success("✅ Discord webhook configured")
+        else:
+            st.session_state.discord_webhook = None
+        
+        with st.expander("How to get Discord Webhook URL"):
+            st.markdown("""
+            1. Go to your Discord server
+            2. Right-click on a channel → Edit Channel
+            3. Go to Integrations → Webhooks
+            4. Click "New Webhook" or "Copy Webhook URL"
+            5. Paste the URL above
+            """)
+        
         # Agent configuration
         st.subheader("Safety Limits")
         max_steps = st.slider("Max Total Steps", min_value=5, max_value=50, value=20)
