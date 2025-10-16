@@ -2,35 +2,63 @@ import os
 import json
 from typing import Optional
 from openai import OpenAI
+import google.generativeai as genai
 
 
 class LLMInterface:
     """
-    Interface for interacting with OpenAI's language models.
-    Handles both structured and unstructured responses.
+    Interface for LLM interactions with automatic fallback.
+    Supports OpenAI (paid) and Google Gemini (FREE).
     """
     
     def __init__(self):
-        self.api_key = os.getenv("OPENAI_API_KEY")
-        if not self.api_key:
-            raise ValueError("OPENAI_API_KEY environment variable is required")
+        self.openai_key = os.getenv("OPENAI_API_KEY")
+        self.gemini_key = os.getenv("GEMINI_API_KEY")
         
-        self.client = OpenAI(api_key=self.api_key)
-        # the newest OpenAI model is "gpt-5" which was released August 7, 2025.
-        # do not change this unless explicitly requested by the user
-        self.model = "gpt-5"
+        # Determine which provider to use
+        self.provider = None
+        
+        # Try Gemini first (FREE!)
+        if self.gemini_key:
+            try:
+                genai.configure(api_key=self.gemini_key)
+                self.gemini_model = genai.GenerativeModel('gemini-1.5-flash')
+                self.provider = "gemini"
+            except:
+                pass
+        
+        # Fallback to OpenAI if available
+        if not self.provider and self.openai_key:
+            try:
+                self.openai_client = OpenAI(api_key=self.openai_key)
+                self.openai_model = "gpt-4o-mini"  # More affordable than gpt-5
+                self.provider = "openai"
+            except:
+                pass
+        
+        if not self.provider:
+            raise ValueError(
+                "No LLM provider available. Please set either:\n"
+                "- GEMINI_API_KEY (FREE: https://aistudio.google.com/apikey)\n"
+                "- OPENAI_API_KEY (Paid: https://platform.openai.com/api-keys)"
+            )
     
     def generate_response(self, prompt: str, max_completion_tokens: int = 4096) -> str:
         """
         Generate a standard text response.
         """
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                max_completion_tokens=max_completion_tokens
-            )
-            return response.choices[0].message.content
+            if self.provider == "gemini":
+                response = self.gemini_model.generate_content(prompt)
+                return response.text
+            
+            elif self.provider == "openai":
+                response = self.openai_client.chat.completions.create(
+                    model=self.openai_model,
+                    messages=[{"role": "user", "content": prompt}],
+                    max_completion_tokens=max_completion_tokens
+                )
+                return response.choices[0].message.content
             
         except Exception as e:
             raise Exception(f"Failed to generate response: {str(e)}")
@@ -45,16 +73,37 @@ class LLMInterface:
         Generate a structured JSON response.
         """
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                response_format={"type": "json_object"},
-                max_completion_tokens=max_completion_tokens
-            )
-            return response.choices[0].message.content
+            if self.provider == "gemini":
+                # Gemini doesn't have JSON mode, so we explicitly request JSON in the prompt
+                combined_prompt = f"""{system_prompt}
+
+{user_prompt}
+
+IMPORTANT: You must respond with ONLY valid JSON. No other text before or after. Start your response with {{ and end with }}.
+"""
+                response = self.gemini_model.generate_content(combined_prompt)
+                response_text = response.text.strip()
+                
+                # Extract JSON if wrapped in markdown code blocks
+                if response_text.startswith("```"):
+                    response_text = response_text.split("```")[1]
+                    if response_text.startswith("json"):
+                        response_text = response_text[4:]
+                    response_text = response_text.strip()
+                
+                return response_text
+            
+            elif self.provider == "openai":
+                response = self.openai_client.chat.completions.create(
+                    model=self.openai_model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    response_format={"type": "json_object"},
+                    max_completion_tokens=max_completion_tokens
+                )
+                return response.choices[0].message.content
             
         except Exception as e:
             raise Exception(f"Failed to generate structured response: {str(e)}")
