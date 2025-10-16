@@ -21,9 +21,12 @@ class StockScreener:
         return {
             "stock_screener": "Scan and filter stocks by price, volume, market cap, technical indicators, and patterns",
             "penny_stock_scanner": "Find penny stocks with squeeze potential, volume spikes, and momentum",
-            "pattern_detector": "Detect technical patterns like double bottom, breakouts, reversals",
+            "pattern_detector": "Detect technical patterns like double bottom, breakouts, reversals, head and shoulders, flags, triangles",
             "options_screener": "Screen stocks by put/call walls, gamma exposure, and unusual flow",
-            "momentum_scanner": "Find stocks with strong momentum, volume confirmation, and trend strength"
+            "momentum_scanner": "Find stocks with strong momentum, volume confirmation, and trend strength",
+            "squeeze_detector": "Detect TTM Squeeze setups using Bollinger Bands + Keltner Channels with momentum confirmation",
+            "bullish_patterns": "Scan for bullish patterns: double bottom, cup and handle, ascending triangle, bull flag, golden cross",
+            "bearish_patterns": "Scan for bearish patterns: double top, head and shoulders, descending triangle, bear flag, death cross"
         }
     
     def get_stock_universe(self, category: str = "all") -> List[str]:
@@ -369,3 +372,562 @@ class StockScreener:
             print(f"Error finding put wall: {str(e)}")
         
         return None
+    
+    def detect_ttm_squeeze(self, top_n: int = 10) -> List[Dict[str, Any]]:
+        """
+        Detect TTM Squeeze setups (Bollinger Bands inside Keltner Channels).
+        
+        The squeeze happens when:
+        - Bollinger Bands contract inside Keltner Channels (consolidation)
+        - Price coils tight (low volatility)
+        - Then fires when BB breaks out of KC (explosive move)
+        
+        Returns stocks in squeeze or about to fire.
+        """
+        stocks = self.get_stock_universe("all")
+        results = []
+        
+        for symbol in stocks:
+            try:
+                ticker = yf.Ticker(symbol)
+                hist = ticker.history(period="3mo")
+                
+                if hist.empty or len(hist) < 20:
+                    continue
+                
+                current_price = hist['Close'].iloc[-1]
+                
+                # Calculate Bollinger Bands (20-period, 2 std dev)
+                bb_middle = hist['Close'].rolling(20).mean()
+                bb_std = hist['Close'].rolling(20).std()
+                bb_upper = bb_middle + (2 * bb_std)
+                bb_lower = bb_middle - (2 * bb_std)
+                bb_width = ((bb_upper - bb_lower) / bb_middle * 100).iloc[-1]
+                
+                # Calculate Keltner Channels (20-period EMA, 1.5 ATR)
+                ema_20 = hist['Close'].ewm(span=20).mean()
+                tr1 = hist['High'] - hist['Low']
+                tr2 = abs(hist['High'] - hist['Close'].shift())
+                tr3 = abs(hist['Low'] - hist['Close'].shift())
+                tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+                atr = tr.rolling(20).mean()
+                
+                kc_upper = ema_20 + (1.5 * atr)
+                kc_lower = ema_20 - (1.5 * atr)
+                kc_width = ((kc_upper - kc_lower) / ema_20 * 100).iloc[-1]
+                
+                # Squeeze detection: BB inside KC
+                bb_inside_kc = (bb_upper.iloc[-1] < kc_upper.iloc[-1] and 
+                               bb_lower.iloc[-1] > kc_lower.iloc[-1])
+                
+                # Squeeze firing: BB breaking out of KC
+                squeeze_firing = (bb_upper.iloc[-1] > kc_upper.iloc[-1] or 
+                                 bb_lower.iloc[-1] < kc_lower.iloc[-1])
+                
+                # Momentum direction
+                momentum = self._calculate_squeeze_momentum(hist['Close'])
+                
+                # Volume confirmation
+                avg_volume = hist['Volume'].tail(20).mean()
+                recent_volume = hist['Volume'].tail(5).mean()
+                volume_ratio = recent_volume / avg_volume if avg_volume > 0 else 0
+                
+                # Squeeze score
+                squeeze_score = 0
+                if bb_inside_kc:
+                    squeeze_score += 40
+                if squeeze_firing and momentum > 0:
+                    squeeze_score += 30
+                if volume_ratio > 1.3:
+                    squeeze_score += 20
+                if bb_width < 5:
+                    squeeze_score += 10
+                
+                if squeeze_score > 30:
+                    results.append({
+                        "symbol": symbol,
+                        "price": round(current_price, 2),
+                        "squeeze_active": bb_inside_kc,
+                        "squeeze_firing": squeeze_firing,
+                        "bb_width": round(bb_width, 2),
+                        "kc_width": round(kc_width, 2),
+                        "momentum": round(momentum, 2),
+                        "volume_ratio": round(volume_ratio, 2),
+                        "squeeze_score": round(squeeze_score, 1)
+                    })
+                
+            except Exception as e:
+                print(f"Error analyzing {symbol} for squeeze: {str(e)}")
+                continue
+        
+        results.sort(key=lambda x: x['squeeze_score'], reverse=True)
+        return results[:top_n]
+    
+    def detect_bullish_patterns(self, top_n: int = 10) -> List[Dict[str, Any]]:
+        """
+        Scan for bullish chart patterns:
+        - Double Bottom
+        - Cup and Handle
+        - Ascending Triangle
+        - Bull Flag
+        - Golden Cross (50 MA crosses above 200 MA)
+        - Inverse Head and Shoulders
+        """
+        stocks = self.get_stock_universe("all")
+        results = []
+        
+        for symbol in stocks:
+            try:
+                ticker = yf.Ticker(symbol)
+                hist = ticker.history(period="6mo")
+                
+                if hist.empty or len(hist) < 50:
+                    continue
+                
+                current_price = hist['Close'].iloc[-1]
+                patterns_found = []
+                bullish_score = 0
+                
+                # Double Bottom
+                is_double_bottom, bottom_price = self._detect_double_bottom(hist['Close'])
+                if is_double_bottom:
+                    patterns_found.append("Double Bottom")
+                    bullish_score += 25
+                
+                # Cup and Handle
+                if self._detect_cup_and_handle(hist['Close']):
+                    patterns_found.append("Cup and Handle")
+                    bullish_score += 30
+                
+                # Ascending Triangle
+                if self._detect_ascending_triangle(hist['Close'], hist['High']):
+                    patterns_found.append("Ascending Triangle")
+                    bullish_score += 25
+                
+                # Bull Flag
+                if self._detect_bull_flag(hist['Close'], hist['Volume']):
+                    patterns_found.append("Bull Flag")
+                    bullish_score += 20
+                
+                # Golden Cross
+                if len(hist) >= 200:
+                    ma_50 = hist['Close'].rolling(50).mean()
+                    ma_200 = hist['Close'].rolling(200).mean()
+                    if (ma_50.iloc[-1] > ma_200.iloc[-1] and 
+                        ma_50.iloc[-5] <= ma_200.iloc[-5]):
+                        patterns_found.append("Golden Cross")
+                        bullish_score += 35
+                
+                # Inverse Head and Shoulders
+                if self._detect_inverse_head_shoulders(hist['Close']):
+                    patterns_found.append("Inverse H&S")
+                    bullish_score += 30
+                
+                if patterns_found:
+                    results.append({
+                        "symbol": symbol,
+                        "price": round(current_price, 2),
+                        "patterns": patterns_found,
+                        "bullish_score": bullish_score,
+                        "rsi": round(self._calculate_rsi(hist['Close']), 2)
+                    })
+                
+            except Exception as e:
+                print(f"Error detecting bullish patterns for {symbol}: {str(e)}")
+                continue
+        
+        results.sort(key=lambda x: x['bullish_score'], reverse=True)
+        return results[:top_n]
+    
+    def detect_bearish_patterns(self, top_n: int = 10) -> List[Dict[str, Any]]:
+        """
+        Scan for bearish chart patterns:
+        - Double Top
+        - Head and Shoulders
+        - Descending Triangle
+        - Bear Flag
+        - Death Cross (50 MA crosses below 200 MA)
+        - Rising Wedge
+        """
+        stocks = self.get_stock_universe("all")
+        results = []
+        
+        for symbol in stocks:
+            try:
+                ticker = yf.Ticker(symbol)
+                hist = ticker.history(period="6mo")
+                
+                if hist.empty or len(hist) < 50:
+                    continue
+                
+                current_price = hist['Close'].iloc[-1]
+                patterns_found = []
+                bearish_score = 0
+                
+                # Double Top
+                if self._detect_double_top(hist['Close']):
+                    patterns_found.append("Double Top")
+                    bearish_score += 25
+                
+                # Head and Shoulders
+                if self._detect_head_shoulders(hist['Close']):
+                    patterns_found.append("Head and Shoulders")
+                    bearish_score += 30
+                
+                # Descending Triangle
+                if self._detect_descending_triangle(hist['Close'], hist['Low']):
+                    patterns_found.append("Descending Triangle")
+                    bearish_score += 25
+                
+                # Bear Flag
+                if self._detect_bear_flag(hist['Close'], hist['Volume']):
+                    patterns_found.append("Bear Flag")
+                    bearish_score += 20
+                
+                # Death Cross
+                if len(hist) >= 200:
+                    ma_50 = hist['Close'].rolling(50).mean()
+                    ma_200 = hist['Close'].rolling(200).mean()
+                    if (ma_50.iloc[-1] < ma_200.iloc[-1] and 
+                        ma_50.iloc[-5] >= ma_200.iloc[-5]):
+                        patterns_found.append("Death Cross")
+                        bearish_score += 35
+                
+                if patterns_found:
+                    results.append({
+                        "symbol": symbol,
+                        "price": round(current_price, 2),
+                        "patterns": patterns_found,
+                        "bearish_score": bearish_score,
+                        "rsi": round(self._calculate_rsi(hist['Close']), 2)
+                    })
+                
+            except Exception as e:
+                print(f"Error detecting bearish patterns for {symbol}: {str(e)}")
+                continue
+        
+        results.sort(key=lambda x: x['bearish_score'], reverse=True)
+        return results[:top_n]
+    
+    def find_moass_candidates(self, top_n: int = 5) -> List[Dict[str, Any]]:
+        """
+        Find potential MOASS (Mother Of All Short Squeeze) candidates.
+        
+        Looks for the perfect storm:
+        - High short interest
+        - Low float
+        - Increasing volume
+        - Bullish momentum
+        - Options gamma squeeze potential
+        - Retailer interest (social sentiment proxy)
+        """
+        stocks = self.get_stock_universe("all")
+        results = []
+        
+        for symbol in stocks:
+            try:
+                ticker = yf.Ticker(symbol)
+                
+                # Price and volume data
+                hist = ticker.history(period="3mo")
+                if hist.empty or len(hist) < 20:
+                    continue
+                
+                current_price = hist['Close'].iloc[-1]
+                
+                # Volume analysis - critical for MOASS
+                avg_volume_20 = hist['Volume'].tail(20).mean()
+                recent_volume = hist['Volume'].tail(5).mean()
+                volume_surge = recent_volume / avg_volume_20 if avg_volume_20 > 0 else 0
+                
+                # Price momentum
+                price_change_5d = ((current_price - hist['Close'].iloc[-6]) / hist['Close'].iloc[-6] * 100) if len(hist) > 5 else 0
+                price_change_20d = ((current_price - hist['Close'].iloc[-21]) / hist['Close'].iloc[-21] * 100) if len(hist) > 20 else 0
+                
+                # RSI for momentum confirmation
+                rsi = self._calculate_rsi(hist['Close'])
+                
+                # Check for options activity (gamma squeeze potential)
+                gamma_potential = self._check_gamma_squeeze_potential(ticker)
+                
+                # TTM Squeeze detection
+                squeeze_active = self._is_in_squeeze(hist)
+                
+                # MOASS Score calculation
+                moass_score = 0
+                
+                # Volume surge (most important)
+                if volume_surge > 3:
+                    moass_score += 35
+                elif volume_surge > 2:
+                    moass_score += 25
+                elif volume_surge > 1.5:
+                    moass_score += 15
+                
+                # Price momentum
+                if price_change_5d > 20:
+                    moass_score += 25
+                elif price_change_5d > 10:
+                    moass_score += 15
+                
+                # RSI sweet spot (not overbought yet)
+                if 50 < rsi < 70:
+                    moass_score += 15
+                
+                # Gamma potential
+                if gamma_potential:
+                    moass_score += 20
+                
+                # Squeeze setup
+                if squeeze_active:
+                    moass_score += 15
+                
+                # Only include high potential candidates
+                if moass_score >= 40:
+                    results.append({
+                        "symbol": symbol,
+                        "price": round(current_price, 2),
+                        "volume_surge": round(volume_surge, 2),
+                        "price_change_5d": round(price_change_5d, 2),
+                        "price_change_20d": round(price_change_20d, 2),
+                        "rsi": round(rsi, 2),
+                        "gamma_potential": gamma_potential,
+                        "squeeze_active": squeeze_active,
+                        "moass_score": round(moass_score, 1),
+                        "avg_volume": int(avg_volume_20)
+                    })
+                
+            except Exception as e:
+                print(f"Error analyzing {symbol} for MOASS: {str(e)}")
+                continue
+        
+        # Sort by MOASS score
+        results.sort(key=lambda x: x['moass_score'], reverse=True)
+        return results[:top_n]
+    
+    def _calculate_squeeze_momentum(self, prices: pd.Series) -> float:
+        """Calculate momentum for squeeze indicator."""
+        if len(prices) < 20:
+            return 0.0
+        
+        # Linear regression slope of recent prices
+        recent = prices.tail(10).values
+        x = np.arange(len(recent))
+        slope = np.polyfit(x, recent, 1)[0]
+        return float(slope)
+    
+    def _detect_cup_and_handle(self, prices: pd.Series) -> bool:
+        """Detect cup and handle pattern."""
+        if len(prices) < 60:
+            return False
+        
+        recent = prices.tail(60).values
+        
+        # Find the cup (U-shape)
+        left_peak = recent[0]
+        bottom = min(recent[10:40])
+        right_peak = recent[-1]
+        
+        # Cup criteria
+        cup_depth = (left_peak - bottom) / left_peak
+        peaks_similar = abs(left_peak - right_peak) / left_peak < 0.05
+        
+        # Handle (small pullback at the end)
+        handle_pullback = (right_peak - min(recent[-10:])) / right_peak
+        
+        return (0.15 < cup_depth < 0.45 and peaks_similar and 
+                0.05 < handle_pullback < 0.20)
+    
+    def _detect_ascending_triangle(self, prices: pd.Series, highs: pd.Series) -> bool:
+        """Detect ascending triangle (flat top, rising bottom)."""
+        if len(prices) < 40:
+            return False
+        
+        recent_highs = highs.tail(20).values
+        recent_lows = prices.tail(20).values
+        
+        # Flat resistance at top
+        resistance_flat = np.std(recent_highs[-5:]) / np.mean(recent_highs[-5:]) < 0.02
+        
+        # Rising support at bottom
+        x = np.arange(len(recent_lows))
+        slope = np.polyfit(x, recent_lows, 1)[0]
+        rising_support = slope > 0
+        
+        return resistance_flat and rising_support
+    
+    def _detect_descending_triangle(self, prices: pd.Series, lows: pd.Series) -> bool:
+        """Detect descending triangle (flat bottom, falling top)."""
+        if len(prices) < 40:
+            return False
+        
+        recent_highs = prices.tail(20).values
+        recent_lows = lows.tail(20).values
+        
+        # Flat support at bottom
+        support_flat = np.std(recent_lows[-5:]) / np.mean(recent_lows[-5:]) < 0.02
+        
+        # Falling resistance at top
+        x = np.arange(len(recent_highs))
+        slope = np.polyfit(x, recent_highs, 1)[0]
+        falling_resistance = slope < 0
+        
+        return support_flat and falling_resistance
+    
+    def _detect_bull_flag(self, prices: pd.Series, volumes: pd.Series) -> bool:
+        """Detect bull flag pattern."""
+        if len(prices) < 30:
+            return False
+        
+        recent = prices.tail(30).values
+        
+        # Strong uptrend (pole)
+        pole_start = recent[0]
+        pole_end = recent[10]
+        pole_gain = (pole_end - pole_start) / pole_start
+        
+        # Consolidation (flag)
+        flag_slope = np.polyfit(np.arange(20), recent[-20:], 1)[0]
+        flag_range = (max(recent[-20:]) - min(recent[-20:])) / np.mean(recent[-20:])
+        
+        return pole_gain > 0.15 and abs(flag_slope) < 0.01 and flag_range < 0.10
+    
+    def _detect_bear_flag(self, prices: pd.Series, volumes: pd.Series) -> bool:
+        """Detect bear flag pattern."""
+        if len(prices) < 30:
+            return False
+        
+        recent = prices.tail(30).values
+        
+        # Strong downtrend (pole)
+        pole_start = recent[0]
+        pole_end = recent[10]
+        pole_drop = (pole_start - pole_end) / pole_start
+        
+        # Consolidation (flag)
+        flag_slope = np.polyfit(np.arange(20), recent[-20:], 1)[0]
+        flag_range = (max(recent[-20:]) - min(recent[-20:])) / np.mean(recent[-20:])
+        
+        return pole_drop > 0.15 and abs(flag_slope) < 0.01 and flag_range < 0.10
+    
+    def _detect_double_top(self, prices: pd.Series) -> bool:
+        """Detect double top pattern."""
+        if len(prices) < 40:
+            return False
+        
+        recent = prices.tail(40).values
+        
+        # Find local maxima
+        maxima_indices = []
+        for i in range(2, len(recent) - 2):
+            if (recent[i] > recent[i-1] and recent[i] > recent[i-2] and
+                recent[i] > recent[i+1] and recent[i] > recent[i+2]):
+                maxima_indices.append(i)
+        
+        if len(maxima_indices) < 2:
+            return False
+        
+        # Check last two peaks
+        last_two_peaks = [recent[i] for i in maxima_indices[-2:]]
+        price_diff = abs(last_two_peaks[0] - last_two_peaks[1]) / max(last_two_peaks) * 100
+        
+        return price_diff < 3
+    
+    def _detect_head_shoulders(self, prices: pd.Series) -> bool:
+        """Detect head and shoulders pattern."""
+        if len(prices) < 60:
+            return False
+        
+        recent = prices.tail(60).values
+        
+        # Find three peaks
+        peaks = []
+        for i in range(5, len(recent) - 5):
+            if all(recent[i] > recent[i+j] for j in range(-5, 6) if j != 0):
+                peaks.append((i, recent[i]))
+        
+        if len(peaks) < 3:
+            return False
+        
+        # Check pattern: left shoulder < head > right shoulder
+        left_shoulder = peaks[-3][1]
+        head = peaks[-2][1]
+        right_shoulder = peaks[-1][1]
+        
+        head_higher = head > left_shoulder and head > right_shoulder
+        shoulders_similar = abs(left_shoulder - right_shoulder) / max(left_shoulder, right_shoulder) < 0.05
+        
+        return head_higher and shoulders_similar
+    
+    def _detect_inverse_head_shoulders(self, prices: pd.Series) -> bool:
+        """Detect inverse head and shoulders pattern."""
+        if len(prices) < 60:
+            return False
+        
+        recent = prices.tail(60).values
+        
+        # Find three troughs
+        troughs = []
+        for i in range(5, len(recent) - 5):
+            if all(recent[i] < recent[i+j] for j in range(-5, 6) if j != 0):
+                troughs.append((i, recent[i]))
+        
+        if len(troughs) < 3:
+            return False
+        
+        # Check pattern: left shoulder > head < right shoulder
+        left_shoulder = troughs[-3][1]
+        head = troughs[-2][1]
+        right_shoulder = troughs[-1][1]
+        
+        head_lower = head < left_shoulder and head < right_shoulder
+        shoulders_similar = abs(left_shoulder - right_shoulder) / min(left_shoulder, right_shoulder) < 0.05
+        
+        return head_lower and shoulders_similar
+    
+    def _check_gamma_squeeze_potential(self, ticker: yf.Ticker) -> bool:
+        """Check if stock has gamma squeeze potential from options."""
+        try:
+            expirations = ticker.options
+            if not expirations:
+                return False
+            
+            # Check near-term expiration
+            options_chain = ticker.option_chain(expirations[0])
+            
+            # High call open interest + volume = gamma potential
+            if not options_chain.calls.empty:
+                total_call_oi = options_chain.calls['openInterest'].sum()
+                total_call_volume = options_chain.calls['volume'].sum()
+                
+                return total_call_oi > 10000 and total_call_volume > 5000
+            
+        except Exception:
+            pass
+        
+        return False
+    
+    def _is_in_squeeze(self, hist: pd.DataFrame) -> bool:
+        """Check if stock is in TTM Squeeze."""
+        if len(hist) < 20:
+            return False
+        
+        # Bollinger Bands
+        bb_middle = hist['Close'].rolling(20).mean()
+        bb_std = hist['Close'].rolling(20).std()
+        bb_upper = bb_middle + (2 * bb_std)
+        bb_lower = bb_middle - (2 * bb_std)
+        
+        # Keltner Channels
+        ema_20 = hist['Close'].ewm(span=20).mean()
+        tr1 = hist['High'] - hist['Low']
+        tr2 = abs(hist['High'] - hist['Close'].shift())
+        tr3 = abs(hist['Low'] - hist['Close'].shift())
+        tr = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+        atr = tr.rolling(20).mean()
+        kc_upper = ema_20 + (1.5 * atr)
+        kc_lower = ema_20 - (1.5 * atr)
+        
+        # Squeeze when BB inside KC
+        return (bb_upper.iloc[-1] < kc_upper.iloc[-1] and 
+                bb_lower.iloc[-1] > kc_lower.iloc[-1])

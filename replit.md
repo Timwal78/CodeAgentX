@@ -54,6 +54,15 @@ Dexter is a Streamlit-based financial research agent that uses a multi-agent arc
 - Comprehensive execution logging and statistics
 - PostgreSQL-based conversation history with full-text search
 
+### Advanced Stock Screening (NEW!)
+- **TTM Squeeze Detection** - Bollinger Bands + Keltner Channels for explosive moves
+- **MOASS Scanner** - Find Mother Of All Short Squeeze candidates with volume surge, gamma potential, and squeeze setups
+- **Penny Stock Scanner** - High-potential penny stocks with squeeze metrics
+- **Bullish Patterns** - Double bottom, cup & handle, ascending triangle, bull flag, golden cross, inverse H&S
+- **Bearish Patterns** - Double top, head & shoulders, descending triangle, bear flag, death cross
+- **Pattern Detection** - Automatic technical pattern recognition across markets
+- **Momentum Scanner** - Volume confirmation, RSI, MACD, moving averages
+
 ### Data Visualization
 - Automatic chart generation from financial data
 - Revenue trend line charts
@@ -109,10 +118,20 @@ Dexter is a Streamlit-based financial research agent that uses a multi-agent arc
 
 ## Example Queries
 
+### Financial Analysis
 - "What was Apple's revenue growth over the last 4 quarters?"
 - "Compare Microsoft and Google's operating margins for 2023"
 - "Analyze Tesla's cash flow trends over the past year"
 - "What is Amazon's debt-to-equity ratio based on recent financials?"
+
+### Stock Screening (NEW!)
+- "Find the top 10 penny stocks with the most squeeze potential today"
+- "What are the top 5 stocks with a double bottom at the put wall with volume and momentum back upwards?"
+- "Show me stocks in a TTM Squeeze setup with Bollinger Bands inside Keltner Channels"
+- "Find MOASS candidates - stocks with volume surge, gamma potential, and squeeze setups"
+- "Scan for bullish patterns: cup and handle, ascending triangle, or golden cross"
+- "Which stocks have a bearish head and shoulders pattern forming?"
+- "Find stocks with unusual options flow and high gamma squeeze potential"
 
 ## How to Use
 

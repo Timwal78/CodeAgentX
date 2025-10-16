@@ -6,6 +6,7 @@ from datetime import datetime
 from .model import LLMInterface
 from .tools import FinancialDataTools
 from .options_tools import OptionsDataTools
+from .screening_tools import StockScreener
 from .prompts import SYSTEM_PROMPTS
 from .schemas import Task, TaskResult, ResearchResult
 from .utils.safety import SafetyManager
@@ -26,6 +27,7 @@ class Agent:
         self.llm = LLMInterface()
         self.tools = FinancialDataTools()
         self.options_tools = OptionsDataTools()
+        self.screener = StockScreener()
         self.safety = SafetyManager(max_steps, max_steps_per_task)
         self.validator = ValidationManager()
         
@@ -103,10 +105,11 @@ class Agent:
         self.current_step += 1
         self.api_call_count += 1
         
-        # Combine stock and options tool descriptions
+        # Combine all tool descriptions
         all_tools = {
             **self.tools.get_tool_descriptions(),
-            **self.options_tools.get_tool_descriptions()
+            **self.options_tools.get_tool_descriptions(),
+            **self.screener.get_tool_descriptions()
         }
         
         prompt = SYSTEM_PROMPTS["planning"].format(
@@ -188,6 +191,33 @@ class Agent:
             if companies:
                 tool_result = self.options_tools.calculate_put_call_ratio(companies[0])
                 self.api_call_count += 1
+        
+        # Stock screening tools
+        elif task.tool_needed == "penny_stock_scanner":
+            tool_result = self.screener.screen_penny_stocks_squeeze(top_n=10)
+            self.api_call_count += 1
+        
+        elif task.tool_needed == "squeeze_detector":
+            tool_result = self.screener.detect_ttm_squeeze(top_n=10)
+            self.api_call_count += 1
+        
+        elif task.tool_needed == "bullish_patterns":
+            tool_result = self.screener.detect_bullish_patterns(top_n=10)
+            self.api_call_count += 1
+        
+        elif task.tool_needed == "bearish_patterns":
+            tool_result = self.screener.detect_bearish_patterns(top_n=10)
+            self.api_call_count += 1
+        
+        elif task.tool_needed == "moass_scanner":
+            tool_result = self.screener.find_moass_candidates(top_n=5)
+            self.api_call_count += 1
+        
+        elif task.tool_needed in ["stock_screener", "momentum_scanner", "pattern_detector"]:
+            # Generic screening with criteria from task description
+            criteria = {"category": "all"}
+            tool_result = self.screener.screen_momentum_breakout(criteria)
+            self.api_call_count += 1
         
         # Generate analysis based on tool result
         prompt = SYSTEM_PROMPTS["action"].format(
