@@ -82,8 +82,21 @@ Dexter is a Streamlit-based financial research agent that uses a multi-agent arc
 ## Configuration
 
 ### Required API Keys
-- `OPENAI_API_KEY` - For AI agent reasoning and analysis (GPT-5)
-- `FINANCIAL_DATASETS_API_KEY` - For real-time financial data (get from https://financialdatasets.ai/)
+
+#### AI Provider (Choose ONE):
+- **`GEMINI_API_KEY` (FREE!)** - Google's Gemini AI for agent reasoning
+  - Get it from: https://aistudio.google.com/apikey
+  - Completely free with generous limits
+  - ⭐ **RECOMMENDED** for free usage
+  
+- **`OPENAI_API_KEY` (Paid)** - OpenAI for AI agent reasoning
+  - Get it from: https://platform.openai.com/api-keys
+  - Requires credits/paid plan
+  
+#### Financial Data:
+- `FINANCIAL_DATASETS_API_KEY` - For real-time financial data
+  - Get it from: https://financialdatasets.ai/
+  - Free tier available
 
 ### Optional Configuration
 - Discord webhook URL (configured in the Streamlit sidebar)
