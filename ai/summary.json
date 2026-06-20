@@ -6,101 +6,53 @@
   "github": "https://github.com/timwal78/codeagentx",
   "license": "MIT",
   "organization": "ScriptMasterLabs / Script Master Labs LLC (SDVOSB)",
-
   "agent_architecture": [
-    {
-      "name": "Planning Agent",
-      "role": "Analyzes queries and creates structured task plans"
-    },
-    {
-      "name": "Action Agent",
-      "role": "Executes individual tasks using financial data tools with multi-source fallback"
-    },
-    {
-      "name": "Validation Agent",
-      "role": "Checks task completion quality and data sufficiency"
-    },
-    {
-      "name": "Answer Agent",
-      "role": "Synthesizes findings into comprehensive, data-backed responses"
-    }
+    {"name": "Planning Agent", "role": "Analyzes queries and creates structured task plans"},
+    {"name": "Action Agent", "role": "Executes individual tasks using financial data tools with multi-source fallback"},
+    {"name": "Validation Agent", "role": "Checks task completion quality and data sufficiency"},
+    {"name": "Answer Agent", "role": "Synthesizes findings into comprehensive, data-backed responses"}
   ],
-
   "scanners": [
-    {
-      "name": "TTM Squeeze Detection",
-      "description": "Bollinger Bands inside Keltner Channels — identifies explosive move setups"
-    },
-    {
-      "name": "MOASS Scanner",
-      "description": "Mother Of All Short Squeeze candidates — volume surge, gamma potential, squeeze setup scoring"
-    },
-    {
-      "name": "Penny Stock Scanner",
-      "description": "High-potential penny stocks with squeeze metrics and price levels"
-    },
-    {
-      "name": "Bullish Pattern Detection",
-      "description": "Double bottom, cup & handle, ascending triangle, bull flag, golden cross, inverse H&S"
-    },
-    {
-      "name": "Bearish Pattern Detection",
-      "description": "Double top, head & shoulders, descending triangle, bear flag, death cross"
-    },
-    {
-      "name": "Options Flow Scanner",
-      "description": "Unusual options activity via volume/OI ratios, IV, calculated Greeks (yfinance)"
-    }
+    {"name": "TTM Squeeze Detection", "description": "Bollinger Bands inside Keltner Channels — identifies explosive move setups"},
+    {"name": "MOASS Scanner", "description": "Mother Of All Short Squeeze candidates — volume surge, gamma potential, squeeze setup scoring"},
+    {"name": "Penny Stock Scanner", "description": "High-potential penny stocks with squeeze metrics and price levels"},
+    {"name": "Bullish Pattern Detection", "description": "Double bottom, cup & handle, ascending triangle, bull flag, golden cross, inverse H&S"},
+    {"name": "Bearish Pattern Detection", "description": "Double top, head & shoulders, descending triangle, bear flag, death cross"},
+    {"name": "Options Flow Scanner", "description": "Unusual options activity via volume/OI ratios, IV, calculated Greeks (yfinance)"}
   ],
-
   "scheduled_scanning": {
     "eagle_eyes": "7:00 AM EST and 3:05 PM EST — comprehensive market analysis",
     "regular": "Every 2 hours (9 AM, 11 AM, 1 PM EST) — continuous monitoring",
     "manual": "On-demand scan via UI",
     "alerts": "Discord webhooks with rich embeds including buy/sell/stop-loss price levels"
   },
-
-  "trading_recommendations": {
-    "buy_price": "Based on recent swing lows and support",
-    "sell_target": "Based on resistance levels and 2.5:1 minimum risk/reward",
-    "stop_loss": "ATR-based (Average True Range) volatility-adjusted"
-  },
-
   "data_sources": {
     "primary": "Financial Datasets API",
     "fallback_1": "Alpha Vantage (25 calls/day free tier)",
     "fallback_2": "Financial Modeling Prep (FMP)",
     "options": "yfinance (free)"
   },
-
   "ai_providers": {
     "gemini": "FREE — recommended for zero-cost usage (Google AI Studio)",
     "openai": "GPT-5 (paid)",
     "anthropic": "Claude (paid)"
   },
-
-  "export": {
-    "pdf": "Formatted research report with tables and statistics",
-    "excel": "Multi-sheet workbook (summary, stats, tasks)",
-    "discord": "Rich embed webhooks with all price levels"
-  },
-
-  "safety": {
-    "global_step_limit": "Default 20 steps (configurable 5–50)",
-    "per_task_step_limit": "Default 5 steps (configurable 2–10)",
-    "loop_detection": "Prevents infinite execution chains",
-    "rate_limiting": "Multi-provider API rate limiting"
-  },
-
   "persistence": "PostgreSQL — conversation history, query templates, scan results with full-text search",
-
   "deployment": "Streamlit on port 5000: streamlit run app.py --server.port 5000",
-
-  "example_queries": [
-    "What was Apple's revenue growth over the last 4 quarters?",
-    "Find the top 10 penny stocks with the most squeeze potential today",
-    "Show me stocks in a TTM Squeeze setup with Bollinger Bands inside Keltner Channels",
-    "Find MOASS candidates — stocks with volume surge, gamma potential, and squeeze setups",
-    "Which stocks have unusual options flow and high gamma squeeze potential?"
-  ]
+  "ecosystem": {
+    "organization": "ScriptMasterLabs",
+    "organization_url": "https://scriptmasterlabs.com",
+    "description": "ScriptMasterLabs builds x402 micropayment infrastructure, AI agent trust systems, and institutional market intelligence tools. All products interoperate via the x402 protocol for agent-native payments.",
+    "related_products": [
+      {"name": "SqueezeOS", "role": "Institutional AI trading intelligence MCP server", "description": "33 MCP tools — short-squeeze detection, options flow, IWM 0DTE scoring, council verdicts, peer signal marketplace. Pay-per-signal in RLUSD on XRP Ledger via x402.", "github": "https://github.com/timwal78/squeezeos", "url": "https://squeezeos-api.onrender.com", "tags": ["mcp-server", "trading", "x402", "rlusd"]},
+      {"name": "mcp-x402 Signal API", "role": "Unified pay-per-call MCP gateway", "description": "43+ MCP tools covering trading signals, web scraping, SEC data, XRPL whale copy-trading, memecoin launchpad, and agent infrastructure.", "github": "https://github.com/timwal78/sml-x402-signal-api", "tags": ["mcp-server", "x402", "multi-chain", "trading"]},
+      {"name": "Ghost Layer", "role": "Dual-chain XRPL+Base toll gateway", "description": "Private routing engine with XRPL+Base micropayment toll, Xahau hooks intelligence, and URIToken minting.", "github": "https://github.com/timwal78/ghost-layer", "url": "https://ghost-layer.onrender.com", "tags": ["gateway", "xrpl", "base", "privacy"]},
+      {"name": "Aetheris-MCP", "role": "x402 web scraping MCP server", "description": "SSE MCP server with JSDOM-sanitized web scraping behind an on-chain x402 USDC micropayment interceptor.", "github": "https://github.com/timwal78/aetheris-mcp-render", "tags": ["mcp-server", "scraping", "x402", "usdc"]},
+      {"name": "Aetheris Client SDK", "role": "TypeScript x402 payment SDK", "description": "Official npm SDK that auto-intercepts HTTP 402 challenges and settles USDC payments on Base.", "github": "https://github.com/timwal78/aetheris-client-sdk", "tags": ["sdk", "typescript", "x402", "usdc"]},
+      {"name": "CrawlToll", "role": "x402-gated web crawling service", "description": "Metered web crawling with x402 micropayment gating.", "github": "https://github.com/timwal78/crawltoll", "tags": ["crawling", "x402"]},
+      {"name": "ZeroQuery Protocol", "role": "Privacy-preserving intent ranking with ZK proofs", "description": "SDK + Anchor program for ranking user intents without leaking raw queries. Groth16 ZK proofs + SOL SaaS tiers.", "github": "https://github.com/timwal78/zeroquery-protocol", "tags": ["zk-proofs", "solana", "privacy", "sdk"]},
+      {"name": "AGO Orchestrator", "role": "Agent orchestration infrastructure", "description": "Orchestration layer for ScriptMasterLabs autonomous agent workflows.", "github": "https://github.com/timwal78/ago-orchestrator", "tags": ["orchestration", "agents"]},
+      {"name": "Printing Press Library", "role": "Published catalog of generated Go CLIs and MCP servers", "description": "Registry of type-safe Go CLIs and MCP servers. Install via npx @mvanhorn/printing-press.", "github": "https://github.com/timwal78/printing-press-library", "tags": ["cli", "mcp-server", "go", "catalog"]}
+    ]
+  }
 }
