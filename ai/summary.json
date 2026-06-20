@@ -1,0 +1,106 @@
+{
+  "product": "CodeAgentX — Dexter",
+  "tagline": "Autonomous multi-agent financial research with MOASS detection and scheduled scanning",
+  "description": "Dexter is a Streamlit-based autonomous financial research agent using a 4-agent architecture. It accepts complex financial queries, decomposes them into structured tasks, executes them with real-time market data from multiple providers, validates quality iteratively, and synthesizes comprehensive answers. Features include TTM Squeeze detection, MOASS scanner, institutional options flow, scheduled eagle-eye scans, and Discord alerts.",
+  "url": "https://scriptmasterlabs.com",
+  "github": "https://github.com/timwal78/codeagentx",
+  "license": "MIT",
+  "organization": "ScriptMasterLabs / Script Master Labs LLC (SDVOSB)",
+
+  "agent_architecture": [
+    {
+      "name": "Planning Agent",
+      "role": "Analyzes queries and creates structured task plans"
+    },
+    {
+      "name": "Action Agent",
+      "role": "Executes individual tasks using financial data tools with multi-source fallback"
+    },
+    {
+      "name": "Validation Agent",
+      "role": "Checks task completion quality and data sufficiency"
+    },
+    {
+      "name": "Answer Agent",
+      "role": "Synthesizes findings into comprehensive, data-backed responses"
+    }
+  ],
+
+  "scanners": [
+    {
+      "name": "TTM Squeeze Detection",
+      "description": "Bollinger Bands inside Keltner Channels — identifies explosive move setups"
+    },
+    {
+      "name": "MOASS Scanner",
+      "description": "Mother Of All Short Squeeze candidates — volume surge, gamma potential, squeeze setup scoring"
+    },
+    {
+      "name": "Penny Stock Scanner",
+      "description": "High-potential penny stocks with squeeze metrics and price levels"
+    },
+    {
+      "name": "Bullish Pattern Detection",
+      "description": "Double bottom, cup & handle, ascending triangle, bull flag, golden cross, inverse H&S"
+    },
+    {
+      "name": "Bearish Pattern Detection",
+      "description": "Double top, head & shoulders, descending triangle, bear flag, death cross"
+    },
+    {
+      "name": "Options Flow Scanner",
+      "description": "Unusual options activity via volume/OI ratios, IV, calculated Greeks (yfinance)"
+    }
+  ],
+
+  "scheduled_scanning": {
+    "eagle_eyes": "7:00 AM EST and 3:05 PM EST — comprehensive market analysis",
+    "regular": "Every 2 hours (9 AM, 11 AM, 1 PM EST) — continuous monitoring",
+    "manual": "On-demand scan via UI",
+    "alerts": "Discord webhooks with rich embeds including buy/sell/stop-loss price levels"
+  },
+
+  "trading_recommendations": {
+    "buy_price": "Based on recent swing lows and support",
+    "sell_target": "Based on resistance levels and 2.5:1 minimum risk/reward",
+    "stop_loss": "ATR-based (Average True Range) volatility-adjusted"
+  },
+
+  "data_sources": {
+    "primary": "Financial Datasets API",
+    "fallback_1": "Alpha Vantage (25 calls/day free tier)",
+    "fallback_2": "Financial Modeling Prep (FMP)",
+    "options": "yfinance (free)"
+  },
+
+  "ai_providers": {
+    "gemini": "FREE — recommended for zero-cost usage (Google AI Studio)",
+    "openai": "GPT-5 (paid)",
+    "anthropic": "Claude (paid)"
+  },
+
+  "export": {
+    "pdf": "Formatted research report with tables and statistics",
+    "excel": "Multi-sheet workbook (summary, stats, tasks)",
+    "discord": "Rich embed webhooks with all price levels"
+  },
+
+  "safety": {
+    "global_step_limit": "Default 20 steps (configurable 5–50)",
+    "per_task_step_limit": "Default 5 steps (configurable 2–10)",
+    "loop_detection": "Prevents infinite execution chains",
+    "rate_limiting": "Multi-provider API rate limiting"
+  },
+
+  "persistence": "PostgreSQL — conversation history, query templates, scan results with full-text search",
+
+  "deployment": "Streamlit on port 5000: streamlit run app.py --server.port 5000",
+
+  "example_queries": [
+    "What was Apple's revenue growth over the last 4 quarters?",
+    "Find the top 10 penny stocks with the most squeeze potential today",
+    "Show me stocks in a TTM Squeeze setup with Bollinger Bands inside Keltner Channels",
+    "Find MOASS candidates — stocks with volume surge, gamma potential, and squeeze setups",
+    "Which stocks have unusual options flow and high gamma squeeze potential?"
+  ]
+}
