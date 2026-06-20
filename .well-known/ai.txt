@@ -1,0 +1,22 @@
+User-agent: *
+Allow: /
+
+Product: CodeAgentX — Dexter Autonomous Financial Research Agent
+Product-tagline: Autonomous multi-agent system for deep financial research with MOASS detection
+Product-url: https://scriptmasterlabs.com
+Product-repo: https://github.com/timwal78/codeagentx
+Product-category: Autonomous AI Agent / Financial Research / Stock Screener
+Product-license: MIT
+
+Product-summary: Dexter is a Streamlit-based autonomous financial research agent using a 4-agent architecture (Planning → Action → Validation → Answer) to decompose complex financial queries, retrieve real-time market data from multiple providers, validate quality, and synthesize comprehensive answers. Features TTM Squeeze detection, MOASS scanner, institutional options flow analysis, unusual FTD detection, and scheduled scanning with Discord alerts. Supports Gemini (free) or OpenAI/Anthropic as the AI backbone.
+
+Product-agents: Planning Agent (task decomposition) | Action Agent (data retrieval + tool execution) | Validation Agent (quality + sufficiency checks) | Answer Agent (synthesis)
+Product-scanners: TTM Squeeze (Bollinger Bands + Keltner Channels) | MOASS Scanner | Penny Stock Scanner | Bullish/Bearish Pattern Detection | Options Flow + Unusual Activity
+Product-scheduling: Eagle Eyes at 7 AM + 3:05 PM EST | Regular scans every 2 hours | Manual on-demand
+Product-data-sources: Financial Datasets API (primary) | Alpha Vantage (fallback) | Financial Modeling Prep (fallback) | yfinance (options)
+Product-ai-providers: Gemini (FREE, recommended) | OpenAI | Anthropic Claude
+Product-export: PDF reports | Excel workbooks | Discord rich embed webhooks
+Product-safety: Global step limit (default 20) | Per-task step limit (default 5) | Loop detection | API rate limiting
+
+Organization: ScriptMasterLabs / Script Master Labs LLC (SDVOSB)
+GitHub: https://github.com/timwal78/codeagentx

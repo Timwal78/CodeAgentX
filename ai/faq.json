@@ -1,0 +1,50 @@
+[
+  {
+    "question": "What is Dexter / CodeAgentX?",
+    "answer": "Dexter is an autonomous financial research agent built with Streamlit and a 4-agent architecture. It accepts complex financial questions, breaks them into structured tasks, executes them with real-time market data from multiple providers, validates quality iteratively, and synthesizes comprehensive answers with charts, export options, and Discord alerts. Features include TTM Squeeze detection, MOASS scanner, institutional options flow, and scheduled eagle-eye scans.",
+    "category": "product",
+    "url": "https://scriptmasterlabs.com"
+  },
+  {
+    "question": "What are the 4 agents and what do they do?",
+    "answer": "The 4-agent pipeline: (1) Planning Agent — analyzes the query and creates structured research task plans; (2) Action Agent — executes individual tasks using financial data tools with multi-source fallback (Financial Datasets → Alpha Vantage → FMP); (3) Validation Agent — checks task completion quality and data sufficiency before passing results forward; (4) Answer Agent — synthesizes all findings into a comprehensive, data-backed response with citations.",
+    "category": "product",
+    "url": "https://github.com/timwal78/codeagentx"
+  },
+  {
+    "question": "What is the MOASS Scanner?",
+    "answer": "The MOASS Scanner finds Mother Of All Short Squeeze candidates — stocks with simultaneous volume surge, gamma potential, and squeeze setup. It scores candidates across multiple dimensions, calculates buy/sell/stop-loss price levels with minimum 2.5:1 risk/reward ratios, and sends results to Discord via rich embed webhooks. Scheduled eagle-eye scans run automatically at 7 AM and 3:05 PM EST.",
+    "category": "product",
+    "url": "https://github.com/timwal78/codeagentx"
+  },
+  {
+    "question": "What is TTM Squeeze detection?",
+    "answer": "TTM Squeeze detection identifies when Bollinger Bands compress inside Keltner Channels — a classic setup for explosive price moves. Dexter scans for active TTM Squeezes across the market, cross-references with momentum indicators (RSI, MACD, moving averages), and flags high-probability breakout candidates.",
+    "category": "product",
+    "url": "https://github.com/timwal78/codeagentx"
+  },
+  {
+    "question": "What AI providers can I use?",
+    "answer": "Dexter supports three AI providers: Gemini (recommended and FREE — get a key at aistudio.google.com/apikey, generous free limits), OpenAI GPT-5 (paid), and Anthropic Claude (paid). Set the appropriate env var: GEMINI_API_KEY, OPENAI_API_KEY. Gemini is the recommended starting point for zero-cost usage.",
+    "category": "config",
+    "url": "https://github.com/timwal78/codeagentx"
+  },
+  {
+    "question": "What safety features prevent runaway agent execution?",
+    "answer": "Dexter has three safety layers: global step limit (default 20, configurable 5–50) stops total execution before it can loop indefinitely; per-task step limit (default 5, configurable 2–10) caps each individual task; loop detection actively identifies circular execution chains and breaks them. Multi-provider API rate limiting prevents quota exhaustion.",
+    "category": "security",
+    "url": "https://github.com/timwal78/codeagentx"
+  },
+  {
+    "question": "How are trading recommendations calculated?",
+    "answer": "For every scan result, Dexter automatically calculates: buy price (based on recent swing lows and support levels), sell target (based on resistance and minimum 2.5:1 risk/reward ratio), and stop loss (ATR-based — Average True Range volatility-adjusted). These levels are included in Discord alerts and scan history.",
+    "category": "product",
+    "url": "https://github.com/timwal78/codeagentx"
+  },
+  {
+    "question": "Who built Dexter and is it open source?",
+    "answer": "Dexter was built by ScriptMasterLabs (Script Master Labs LLC), an SDVOSB. It is MIT licensed. The repo is at github.com/timwal78/codeagentx.",
+    "category": "company",
+    "url": "https://scriptmasterlabs.com"
+  }
+]
