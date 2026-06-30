@@ -1,0 +1,13 @@
+{
+  "name": "CodeAgentX",
+  "description": "Code agent X -- autonomous code generation and analysis system",
+  "owner": "ScriptMasterLabs",
+  "github": "https://github.com/timwal78/CodeAgentX",
+  "contact": "scriptmasterlabs@gmail.com",
+  "sovereign": {
+    "noMockData": true,
+    "liveDataOnly": true,
+    "noTelemetry": true,
+    "enforcedBy": ".github/workflows/sovereign-data-check.yml"
+  }
+}
